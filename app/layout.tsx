@@ -29,7 +29,7 @@ const workSans = localFont({
       weight: '400',
       style: 'normal'
     },{
-      path: './fonts/WorkSans-Black.ttf',
+      path: './fonts/WorkSans-Light.ttf',
       weight: '300',
       style: 'normal'
     },{
@@ -37,8 +37,8 @@ const workSans = localFont({
       weight: '200',
       style: 'normal'
     },{
-      path: './fonts/WorkSans-Thin.ttf',
-      weight: '200',
+      path: './fonts/WorkSans-ExtraLight.ttf',
+      weight: '100',
       style: 'normal'
     },
   ],
@@ -57,9 +57,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={workSans.variable}
-      >
+      <body className={workSans.variable}>
         {children}
       </body>
     </html>

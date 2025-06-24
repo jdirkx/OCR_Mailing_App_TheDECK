@@ -14,9 +14,17 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #ffffff;
+    --foreground: #ededed;  
   }
+}
+
+.navbar-button {
+  font-family: var(--font-work-sans), sans-serif;
+}
+
+.font-work-sans {
+  font-family: var(--font-work-sans), sans-serif;
 }
 
 body {
@@ -24,3 +32,4 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
