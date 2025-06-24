@@ -6,11 +6,11 @@ import ProtectedRoute from "@/app/components/ProtectedRoute";
 export default function Home() {
   return (
     <SessionProvider>
-      <div className="font-work-sans bg-white text-black">
-        <ProtectedRoute>
-            <MailIntakeDemo />
-        </ProtectedRoute>
-      </div>
+      <ProtectedRoute>
+        <div className="font-work-sans bg-white text-black">
+          <MailIntakeDemo />
+        </div>
+      </ProtectedRoute>
     </SessionProvider>
   );
 }

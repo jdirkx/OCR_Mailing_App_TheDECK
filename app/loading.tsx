@@ -22,7 +22,7 @@ export default function Loading() {
             d="M4 12a8 8 0 018-8v8z"
           />
         </svg>
-        <span className="text-gray-700 font-medium text-lg">Loading...</span>
+        <span className="text-black font-medium text-lg">Loading...</span>
       </div>
     </div>
   );

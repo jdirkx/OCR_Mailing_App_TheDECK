@@ -10,18 +10,17 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
 
-  // If already logged in, redirect to mail-upload screen
+  // Handle redirects
   useEffect(() => {
-    if (status === "authenticated") {
-      router.push("/mail-upload");
+    const error = searchParams.get("error");
+    
+    if (error === "unauthorized") {
+      alert("You must use an authorized email to sign in.");
+      router.replace("/"); // Clear error from URL
     }
-  }, [status, router]);
-
-  // Handle login form submission
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await signIn("google"); // or your provider
-  };
+    
+    if (status === "authenticated") router.push("/mail-upload");
+  }, [status, searchParams, router]);
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-white centered-container">
