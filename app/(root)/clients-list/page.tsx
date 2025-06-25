@@ -72,7 +72,7 @@ export default function ClientPage() {
     <SessionProvider>
       <ProtectedRoute>
         <div className="max-w-4xl mx-auto p-6">
-          <h1 className="text-3xl font-bold mb-6 text-black">CLIENTS</h1>
+          <h1 className="text-2xl font-bold mb-6 text-black">CLIENTS</h1>
 
           {/* Add new client form */}
           <div className="mb-8 p-4 border rounded shadow-sm bg-black">

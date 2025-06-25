@@ -30,10 +30,27 @@ export default function MailIntakeDemo() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    alert(
-      `Submitted!\nClient: ${selectedClient}\nImages: ${images.length}\nNotes: ${notes}`
-    );
-    // Replace with actual submit logic
+    if (!selectedClient && images.length < 1) {
+      alert(
+        'Please select a client and select images!'
+      );
+    }
+    else if (!selectedClient) {
+      alert(
+        `Please select a client!`
+      );
+    }
+    else if (images.length < 1) {
+      alert (
+        'Please select images!'
+      );
+    }
+    else {
+      alert(
+        `Submitted!\nClient: ${selectedClient}\nImages: ${images.length}\nNotes: ${notes}`
+      );
+      // Replace with actual submit logic
+    }
   }
 
   function removeImage(idx: number) {
@@ -47,7 +64,7 @@ export default function MailIntakeDemo() {
   }));
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="mx-auto min-h-screen flex items-start justify-center bg-gray-50">
       <form
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-lg shadow-md w-full max-w-md space-y-6"

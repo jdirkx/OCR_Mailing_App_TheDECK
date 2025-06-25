@@ -1,10 +1,12 @@
 import Navbar from "@/app/components/Navbar"
 
-export default function layout({ children }: Readonly<{ children: React.ReactNode}>) {
-    return (
-        <main className="font-work-sans bg-white">
-            <Navbar />
-            {children}
-        </main>
-    );
+export default function Home({ children}: Readonly<{ children: React.ReactNode}>) {
+  return (
+    <html>
+      <body>
+        <Navbar />
+        {children}
+      </body>
+    </html>
+  );
 }
