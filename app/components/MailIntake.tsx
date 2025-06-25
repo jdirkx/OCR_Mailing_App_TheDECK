@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React, { useState, useRef } from "react";
 import Select from "react-select"
 
@@ -111,7 +112,7 @@ export default function MailIntakeDemo() {
             <div className="mt-2 flex gap-2 flex-wrap">
               {imagePreviews.map((src, idx) => (
                 <div key={idx} className="relative">
-                  <img
+                  <Image
                     src={src}
                     alt={`Preview ${idx + 1}`}
                     className="h-20 w-20 object-cover rounded border cursor-pointer"
@@ -159,7 +160,7 @@ export default function MailIntakeDemo() {
             className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
             onClick={() => setModalImage(null)}
           >
-            <img
+            <Image
               src={modalImage}
               alt="Enlarged preview"
               className="max-h-[80vh] max-w-[80vw] rounded shadow-lg"
