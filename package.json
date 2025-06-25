@@ -14,9 +14,11 @@
     "react-dom": "$react-dom"
   },
   "dependencies": {
+    "@prisma/client": "^6.10.1",
     "@tailwindcss/typography": "^0.5.16",
     "next": "15.3.3",
     "next-auth": "^5.0.0-beta.28",
+    "prisma": "^6.10.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-select": "^5.10.1",

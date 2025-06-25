@@ -1,5 +1,5 @@
 "use client"
-import { SessionProvider, useSession } from "next-auth/react";
+import { SessionProvider } from "next-auth/react";
 import MailIntakeDemo from "@/app/components/MailIntake";
 import ProtectedRoute from "@/app/components/ProtectedRoute";
 

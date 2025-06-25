@@ -8,7 +8,7 @@ import Image from "next/image";
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
 
   // Handle redirects
   useEffect(() => {
