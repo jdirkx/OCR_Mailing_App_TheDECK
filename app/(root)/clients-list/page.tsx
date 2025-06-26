@@ -1,6 +1,6 @@
 "use client";
 
-import ProtectedRoute from "@/app/components/ProtectedRoute";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import React, { useState } from "react";
 import { SessionProvider } from "next-auth/react";
 

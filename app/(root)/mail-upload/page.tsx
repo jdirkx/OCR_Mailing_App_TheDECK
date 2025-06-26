@@ -1,7 +1,7 @@
 "use client"
 import { SessionProvider } from "next-auth/react";
-import MailIntakeDemo from "@/app/components/MailIntake";
-import ProtectedRoute from "@/app/components/ProtectedRoute";
+import MailIntakeDemo from "@/components/MailIntake";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function Home() {
   return (

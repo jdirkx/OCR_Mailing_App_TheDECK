@@ -1,4 +1,4 @@
-import ProtectedRoute from '@/app/components/ProtectedRoute'
+import ProtectedRoute from '@/components/ProtectedRoute'
 import { SessionProvider } from 'next-auth/react'
 import React from 'react'
 
