@@ -2,34 +2,39 @@
 
 import Image from "next/image";
 import React, { useState, useRef, useEffect } from "react";
-import Select from "react-select";
-import { addMailForClient, getAllClients } from "@/lib/actions";
+import Select from "react-select"
+import { getAllClients } from "@/lib/actions";
 
-export default function MailIntake() {
-  const [selectedClient, setSelectedClient] = useState<number | null>(null);
+const [companies, setCompanies] = useState<{ id: number; name: string }[]>([]);
+
+// // Test data
+// const companies = [
+//   { id: 1, name: "Acme Corp" },
+//   { id: 2, name: "Globex Inc." },
+//   { id: 3, name: "Stark Industries" },
+// ];
+
+// Fetch companies from database
+useEffect(() => {
+  const fetchCompanies = async () => {
+    try {
+      const companiesData = await getAllClients();
+      setCompanies(companiesData);
+    } catch (error) {
+      alert("Failed to load companies.");
+    }
+  };
+  fetchCompanies();
+}, []);
+
+export default function MailIntakeDemo() {
+  const [selectedClient, setSelectedClient] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [modalImage, setModalImage] = useState<string | null>(null);
-  const [companies, setCompanies] = useState<{ id: number; name: string }[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Fetch companies from database
-  useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        const companiesData = await getAllClients();
-        setCompanies(companiesData);
-      } catch (error) {
-        console.error("Failed to fetch companies:", error);
-        alert("Failed to load companies. Please try again later.");
-      }
-    };
-    
-    fetchCompanies();
-  }, []);
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files) {
@@ -40,52 +45,29 @@ export default function MailIntake() {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Client-side validation
-    if (!selectedClient) {
-      alert("Please select a client!");
-      setIsSubmitting(false);
-      return;
+    if (!selectedClient && images.length < 1) {
+      alert(
+        'Please select a client and select images!'
+      );
     }
-    
-    if (images.length < 1) {
-      alert("Please select at least one image!");
-      setIsSubmitting(false);
-      return;
+    else if (!selectedClient) {
+      alert(
+        `Please select a client!`
+      );
     }
-    
-    try {
-      // Upload images to storage (this is a placeholder - implement your actual upload logic)
-      const imageUrls = await uploadImages(images);
-      
-      // Add mail to database
-      await addMailForClient(selectedClient, {
-        imageUrls,
-        notes
-      });
-      
-      alert("Mail successfully added!");
-      
-      // Reset form
-      setSelectedClient(null);
-      setImages([]);
-      setImagePreviews([]);
-      setNotes("");
-    } catch (error) {
-      console.error("Submission failed:", error);
-      alert("Failed to submit mail. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+    else if (images.length < 1) {
+      alert (
+        'Please select images!'
+      );
     }
-  }
-
-  async function uploadImages(files: File[]): Promise<string[]> {
-    // Implement your actual image upload logic here
-    // This should return an array of image URLs
-    return files.map(file => URL.createObjectURL(file));
+    else {
+      alert(
+        `Submitted!\nClient: ${selectedClient}\nImages: ${images.length}\nNotes: ${notes}`
+      );
+      // Replace with actual submit logic
+    }
   }
 
   function removeImage(idx: number) {
@@ -93,8 +75,8 @@ export default function MailIntake() {
     setImagePreviews(prev => prev.filter((_, i) => i !== idx));
   }
 
-  const clientOptions = companies.map(c => ({
-    value: c.id,
+  const ClientOptions = companies.map(c => ({
+    value: c.name,
     label: c.name,
   }));
 
@@ -114,8 +96,8 @@ export default function MailIntake() {
             Select Client
           </label>
           <Select
-            options={clientOptions}
-            onChange={option => setSelectedClient(option ? option.value : null)}
+            options={ClientOptions}
+            onChange={option => setSelectedClient(option ? option.value : "")}
             placeholder="Search or select a Client..."
             className="text-black"
             isSearchable
@@ -149,8 +131,6 @@ export default function MailIntake() {
                   <Image
                     src={src}
                     alt={`Preview ${idx + 1}`}
-                    width={80}
-                    height={80}
                     className="h-20 w-20 object-cover rounded border cursor-pointer"
                     onClick={() => setModalImage(src)}
                   />
@@ -168,7 +148,6 @@ export default function MailIntake() {
             </div>
           )}
         </div>
-        
         {/* Notes */}
         <div>
           <label className="block mb-1 font-medium text-gray-700">
@@ -186,10 +165,9 @@ export default function MailIntake() {
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50"
-          disabled={isSubmitting}
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors font-semibold"
         >
-          {isSubmitting ? "Submitting..." : "Submit"}
+          Submit
         </button>
 
         {/* Modal for enlarged image */}
@@ -201,14 +179,13 @@ export default function MailIntake() {
             <Image
               src={modalImage}
               alt="Enlarged preview"
-              width={800}
-              height={600}
-              className="max-h-[80vh] max-w-[80vw] rounded shadow-lg object-contain"
-              onClick={e => e.stopPropagation()}
+              className="max-h-[80vh] max-w-[80vw] rounded shadow-lg"
+              onClick={e => e.stopPropagation()} // Prevent modal close on image click
             />
           </div>
         )}
       </form>
     </div>
+    
   );
 }

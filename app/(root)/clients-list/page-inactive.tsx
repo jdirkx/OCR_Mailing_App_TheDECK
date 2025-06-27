@@ -1,35 +1,24 @@
 "use client";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { SessionProvider } from "next-auth/react";
-import {
-  getAllClients,
-  addClient as dbAddClient,
-  editClient as dbEditClient,
-  deleteClient as dbDeleteClient,
-} from "@/lib/actions";
+
+// Dummy initial data for clients
+const initialClients = [
+  { id: 1, name: "Acme Corp", email: "contact@acme.com" },
+  { id: 2, name: "Globex Inc.", email: "info@globex.com" },
+  { id: 3, name: "Stark Industries", email: "hello@starkindustries.com" },
+];
 
 export default function ClientPage() {
-  const [clients, setClients] = useState<{ id: number; name: string; email: string }[]>([]);
+  const [clients, setClients] = useState(initialClients);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [newClientName, setNewClientName] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  // Fetch clients from DB on mount
-  useEffect(() => {
-    async function fetchClients() {
-      setLoading(true);
-      const data = await getAllClients();
-      setClients(data);
-      setLoading(false);
-    }
-    fetchClients();
-  }, []);
 
   // Filter clients based on search query
   const filteredClients = clients.filter(client =>
@@ -44,14 +33,9 @@ export default function ClientPage() {
     setEditEmail(client.email);
   }
 
-  // Save edited client to DB
-  async function saveEdit(id: number) {
-    if (!editName.trim() || !editEmail.trim()) {
-      alert("Name and email are required.");
-      return;
-    }
-    await dbEditClient(id, editName.trim(), editEmail.trim());
-    setClients(clients.map(c => c.id === id ? { ...c, name: editName.trim(), email: editEmail.trim() } : c));
+  // Save edited client
+  function saveEdit(id: number) {
+    setClients(clients.map(c => c.id === id ? { ...c, name: editName, email: editEmail } : c));
     setEditingId(null);
   }
 
@@ -60,21 +44,24 @@ export default function ClientPage() {
     setEditingId(null);
   }
 
-  // Add new client to DB
-  async function addClient() {
+  // Add new client
+  function addClient() {
     if (!newClientName.trim() || !newClientEmail.trim()) {
       alert("Please enter both name and email for the new client.");
       return;
     }
-    const newClient = await dbAddClient(newClientName.trim(), newClientEmail.trim());
+    const newClient = {
+      id: clients.length ? Math.max(...clients.map(c => c.id)) + 1 : 1,
+      name: newClientName.trim(),
+      email: newClientEmail.trim(),
+    };
     setClients([...clients, newClient]);
     setNewClientName("");
     setNewClientEmail("");
   }
 
-  // Delete a client from DB
-  async function deleteClient(id: number) {
-    await dbDeleteClient(id);
+  // Delete a client
+  function deleteClient(id: number) {
     setClients(clients.filter(c => c.id !== id));
     if (editingId === id) {
       setEditingId(null);
@@ -124,9 +111,6 @@ export default function ClientPage() {
               className="w-full border rounded px-3 py-2 bg-white text-black"
             />
           </div>
-
-          {/* Loading indicator */}
-          {loading && <div className="text-center py-4">Loading...</div>}
 
           {/* Responsive Client List */}
           <div className="bg-white border rounded shadow-sm">

@@ -1,6 +1,6 @@
 "use client"
 import { SessionProvider } from "next-auth/react";
-import MailIntakeDemo from "@/components/MailIntake";
+import MailIntake from "@/components/MailIntake";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function Home() {
@@ -8,7 +8,7 @@ export default function Home() {
     <SessionProvider>
       <ProtectedRoute>
         <div className="font-work-sans bg-white text-black">
-          <MailIntakeDemo />
+          <MailIntake />
         </div>
       </ProtectedRoute>
     </SessionProvider>
