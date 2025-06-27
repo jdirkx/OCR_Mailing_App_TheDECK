@@ -1,24 +1,35 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState, useRef } from "react";
-import Select from "react-select"
+import React, { useState, useRef, useEffect } from "react";
+import Select from "react-select";
+import { addMailForClient, getAllClients } from "@/lib/actions";
 
-// Integrade database technology
-const companies = [
-  { id: 1, name: "Acme Corp" },
-  { id: 2, name: "Globex Inc." },
-  { id: 3, name: "Stark Industries" },
-];
-
-export default function MailIntakeDemo() {
-  const [selectedClient, setSelectedClient] = useState("");
+export default function MailIntake() {
+  const [selectedClient, setSelectedClient] = useState<number | null>(null);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [modalImage, setModalImage] = useState<string | null>(null);
+  const [companies, setCompanies] = useState<{ id: number; name: string }[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch companies from database
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const companiesData = await getAllClients();
+        setCompanies(companiesData);
+      } catch (error) {
+        console.error("Failed to fetch companies:", error);
+        alert("Failed to load companies. Please try again later.");
+      }
+    };
+    
+    fetchCompanies();
+  }, []);
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files) {
@@ -29,29 +40,52 @@ export default function MailIntakeDemo() {
     }
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedClient && images.length < 1) {
-      alert(
-        'Please select a client and select images!'
-      );
+    setIsSubmitting(true);
+    
+    // Client-side validation
+    if (!selectedClient) {
+      alert("Please select a client!");
+      setIsSubmitting(false);
+      return;
     }
-    else if (!selectedClient) {
-      alert(
-        `Please select a client!`
-      );
+    
+    if (images.length < 1) {
+      alert("Please select at least one image!");
+      setIsSubmitting(false);
+      return;
     }
-    else if (images.length < 1) {
-      alert (
-        'Please select images!'
-      );
+    
+    try {
+      // Upload images to storage (this is a placeholder - implement your actual upload logic)
+      const imageUrls = await uploadImages(images);
+      
+      // Add mail to database
+      await addMailForClient(selectedClient, {
+        imageUrls,
+        notes
+      });
+      
+      alert("Mail successfully added!");
+      
+      // Reset form
+      setSelectedClient(null);
+      setImages([]);
+      setImagePreviews([]);
+      setNotes("");
+    } catch (error) {
+      console.error("Submission failed:", error);
+      alert("Failed to submit mail. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-    else {
-      alert(
-        `Submitted!\nClient: ${selectedClient}\nImages: ${images.length}\nNotes: ${notes}`
-      );
-      // Replace with actual submit logic
-    }
+  }
+
+  async function uploadImages(files: File[]): Promise<string[]> {
+    // Implement your actual image upload logic here
+    // This should return an array of image URLs
+    return files.map(file => URL.createObjectURL(file));
   }
 
   function removeImage(idx: number) {
@@ -59,8 +93,8 @@ export default function MailIntakeDemo() {
     setImagePreviews(prev => prev.filter((_, i) => i !== idx));
   }
 
-  const ClientOptions = companies.map(c => ({
-    value: c.name,
+  const clientOptions = companies.map(c => ({
+    value: c.id,
     label: c.name,
   }));
 
@@ -80,8 +114,8 @@ export default function MailIntakeDemo() {
             Select Client
           </label>
           <Select
-            options={ClientOptions}
-            onChange={option => setSelectedClient(option ? option.value : "")}
+            options={clientOptions}
+            onChange={option => setSelectedClient(option ? option.value : null)}
             placeholder="Search or select a Client..."
             className="text-black"
             isSearchable
@@ -115,6 +149,8 @@ export default function MailIntakeDemo() {
                   <Image
                     src={src}
                     alt={`Preview ${idx + 1}`}
+                    width={80}
+                    height={80}
                     className="h-20 w-20 object-cover rounded border cursor-pointer"
                     onClick={() => setModalImage(src)}
                   />
@@ -132,6 +168,7 @@ export default function MailIntakeDemo() {
             </div>
           )}
         </div>
+        
         {/* Notes */}
         <div>
           <label className="block mb-1 font-medium text-gray-700">
@@ -149,9 +186,10 @@ export default function MailIntakeDemo() {
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors font-semibold"
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50"
+          disabled={isSubmitting}
         >
-          Submit
+          {isSubmitting ? "Submitting..." : "Submit"}
         </button>
 
         {/* Modal for enlarged image */}
@@ -163,13 +201,14 @@ export default function MailIntakeDemo() {
             <Image
               src={modalImage}
               alt="Enlarged preview"
-              className="max-h-[80vh] max-w-[80vw] rounded shadow-lg"
-              onClick={e => e.stopPropagation()} // Prevent modal close on image click
+              width={800}
+              height={600}
+              className="max-h-[80vh] max-w-[80vw] rounded shadow-lg object-contain"
+              onClick={e => e.stopPropagation()}
             />
           </div>
         )}
       </form>
     </div>
-    
   );
 }
