@@ -84,7 +84,7 @@ export default function ClientPage() {
   return (
     <SessionProvider>
       <ProtectedRoute>
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="font-work-sans max-w-4xl mx-auto p-6">
           <h1 className="text-2xl font-bold mb-6 text-black">CLIENTS</h1>
 
           {/* Add new client form */}

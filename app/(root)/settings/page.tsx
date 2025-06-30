@@ -1,5 +1,6 @@
 import ProtectedRoute from '@/components/ProtectedRoute'
 import { SessionProvider } from 'next-auth/react'
+import Setting from '@/components/Setting'
 import React from 'react'
 
 const Settings = () => {
@@ -7,7 +8,7 @@ const Settings = () => {
     <SessionProvider>
         <ProtectedRoute>
             <div className='text-black'>
-                Settings
+                <Setting />
             </div>
         </ProtectedRoute>
     </SessionProvider>
