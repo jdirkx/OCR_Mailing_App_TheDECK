@@ -111,7 +111,7 @@ export default function MailIntake() {
     
     // Add metadata with client email
     formData.append("to", toEmail);
-    formData.append("subject", `New Mail for Client ${selectedClient}`);
+    formData.append("subject", `Your mail has arrived at The DECK`);
     formData.append("notes", notes);
     
     try {

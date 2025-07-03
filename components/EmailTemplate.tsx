@@ -1,236 +1,148 @@
-import {
-  Body,
-  Column,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Img,
-  Link,
-  Preview,
-  Row,
-  Section,
-  Text,
-} from '@react-email/components';
+import * as React from 'react';
 
 interface EmailTemplateProps {
-  validationCode?: string;
+  logoUrl: string;
+  attachmentCount: number;
+  notes?: string; // notes is optional
 }
 
-const baseUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : '';
+export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
+  logoUrl,
+  attachmentCount,
+  notes,
+}) => (
+  <div style={{
+    fontFamily: 'Arial, "ヒラギノ角ゴ ProN", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif',
+    background: '#f5f7fa',
+    padding: '30px 0'
+  }}>
+    <div style={{
+      maxWidth: '600px',
+      margin: '0 auto',
+      background: '#fff',
+      borderRadius: '10px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+      padding: '32px'
+    }}>
+      {/* Logo at the top */}
+      <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+        <img
+          src={logoUrl}
+          alt="The DECK Logo"
+          style={{ maxWidth: '140px', height: 'auto', marginBottom: '10px' }}
+        />
+      </div>
 
-export const EmailTemplate = ({
-  validationCode,
-}: EmailTemplateProps) => (
-  <Html>
-    <Head />
-    <Body style={main}>
-      <Preview>Confirm your email address</Preview>
-      <Container style={container}>
-        <Section style={logoContainer}>
-          <Img
-            src={`http://localhost:3000/logo.png`}
-            width="120"
-            height="36"
-            alt="Slack"
-          />
-        </Section>
-        <Heading style={h1}>Confirm your email address</Heading>
-        <Text style={heroText}>
-          Your confirmation code is below - enter it in your open browser window
-          and we'll help you get signed in.
-        </Text>
+      {/* Attachment count box */}
+      <div style={{
+        background: '#fff3cd',
+        border: '1px solid #ffeeba',
+        borderRadius: '6px',
+        padding: '16px 20px',
+        marginBottom: notes ? '16px' : '24px',
+        textAlign: 'center'
+      }}>
+        <span style={{
+          fontWeight: 700,
+          color: '#856404',
+          fontSize: '17px'
+        }}>
+          添付ファイルあり：{attachmentCount}件
+        </span>
+      </div>
 
-        <Section style={codeBox}>
-          <Text style={confirmationCodeText}>{validationCode}</Text>
-        </Section>
+      {/* Notes container (shown only if notes exist) */}
+      {notes && (
+        <div style={{
+          background: '#e3f2fd',
+          border: '1px solid #90caf9',
+          borderRadius: '6px',
+          padding: '14px 18px',
+          marginBottom: '24px',
+          color: '#1565c0',
+          fontSize: '15px'
+        }}>
+          <strong>担当者からのメモ：</strong>
+          <div style={{ marginTop: '6px', whiteSpace: 'pre-line' }}>
+            {notes}
+          </div>
+        </div>
+      )}
 
-        <Text style={text}>
-          If you didn't request this email, there's nothing to worry about, you
-          can safely ignore it.
-        </Text>
+      {/* Main heading */}
+      <h1 style={{
+        fontSize: '22px',
+        color: '#2c3e50',
+        borderBottom: '2px solid #eee',
+        paddingBottom: '8px',
+        marginBottom: '18px'
+      }}>
+        新しい郵便物のお知らせ
+      </h1>
 
-        <Section>
-          <Row style={footerLogos}>
-            <Column style={{ width: '66%' }}>
-              <Img
-                src={`http://localhost:3000/logo.png`}
-                width="120"
-                height="36"
-                alt="Slack"
-              />
-            </Column>
-            <Column>
-              <Section>
-                <Row>
-                  <Column>
-                    <Link href="/">
-                      <Img
-                        src={`http://localhost:3000/logo.png`}
-                        width="32"
-                        height="32"
-                        alt="Slack"
-                        style={socialMediaIcon}
-                      />
-                    </Link>
-                  </Column>
-                  <Column>
-                    <Link href="/">
-                      <Img
-                        src={`http://localhost:3000/logo.png`}
-                        width="32"
-                        height="32"
-                        alt="Slack"
-                        style={socialMediaIcon}
-                      />
-                    </Link>
-                  </Column>
-                  <Column>
-                    <Link href="/">
-                      <Img
-                        src={`http://localhost:3000/logo.png`}
-                        width="32"
-                        height="32"
-                        alt="Slack"
-                        style={socialMediaIcon}
-                      />
-                    </Link>
-                  </Column>
-                </Row>
-              </Section>
-            </Column>
-          </Row>
-        </Section>
+      {/* Main message container */}
+      <div style={{
+        background: '#f0f4fa',
+        borderRadius: '6px',
+        padding: '18px 22px',
+        marginBottom: '20px',
+        fontSize: '16px',
+        color: '#222'
+      }}>
+        <p style={{ margin: 0, whiteSpace: 'pre-line' }}>
+          いつもお世話になっております。<br />
+          The DECK運営事務局です。<br />
+          <strong style={{ color: '#0052cc' }}>新しい郵便物が届きました。</strong>
+        </p>
+        <ul style={{ margin: '12px 0 0 0', paddingLeft: '20px', fontSize: '15px' }}>
+          <li>受付窓口での受取時間は（平日10：00〜18：00）です。</li>
+          <li>破棄、転送のどちらかをご希望の場合はご連絡ください。</li>
+        </ul>
+        <div style={{ marginTop: '12px' }}>
+          <strong>【転送】</strong>
+          <ul style={{ paddingLeft: '20px', fontSize: '15px' }}>
+            <li>お預かりは最長1か月となっております。それまでに連絡、またはお受け取りいただけない場合は月末に転送させて頂きます。</li>
+            <li>転送物が基準内であれば佐川飛脚メール便での転送となります。</li>
+            <li>毎月1回月末転送の佐川飛脚メール便は無料です。</li>
+            <li>2通目以降及び佐川飛脚メール便に入らない郵便物及び宅配物については有料転送（実費+手数料税込440円）となります。</li>
+            <li>荷物の基準（縦34cm・横25cm・高さ3cm・重量3kg以内）</li>
+            <li>郵便局へ差し出し後5日程度でポストインにてお届けとなります。</li>
+            <li>基準を超えるものは宅配便（元払）+手数料税込440円にて転送します。料金は、600円〜（地域・サイズ・重量により料金が異なります）</li>
+            <li>日時指定はお受けできません。</li>
+          </ul>
+        </div>
+        <div style={{ marginTop: '12px' }}>
+          <strong>【受付窓口での受取】</strong>
+          <ul style={{ paddingLeft: '20px', fontSize: '15px' }}>
+            <li>受付にて直接お渡しいたしますのでご署名（印）をお願いいたします。</li>
+          </ul>
+        </div>
+        <div style={{ marginTop: '12px' }}>
+          <strong>【ご注意】</strong>
+          <ul style={{ paddingLeft: '20px', fontSize: '15px' }}>
+            <li>到着後、3営業日以内のご案内とさせていただいております。お急ぎの郵便物、宅配便等がある場合はお問合わせくださいませ。</li>
+            <li>転送連絡をいただきますと、翌営業日午前に転送手続きをさせていただきます。</li>
+            <li>お手数をおかけしますが、ご確認のほどよろしくお願い致します。</li>
+          </ul>
+        </div>
+      </div>
 
-        <Section>
-          <Link
-            style={footerLink}
-            href="https://slackhq.com"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Our blog
-          </Link>
-          &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-          <Link
-            style={footerLink}
-            href="https://slack.com/legal"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Policies
-          </Link>
-          &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-          <Link
-            style={footerLink}
-            href="https://slack.com/help"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Help center
-          </Link>
-          &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-          <Link
-            style={footerLink}
-            href="https://slack.com/community"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-auth="NotApplicable"
-            data-linkindex="6"
-          >
-            Slack Community
-          </Link>
-          <Text style={footerText}>
-            ©2022 Slack Technologies, LLC, a Salesforce company. <br />
-            500 Howard Street, San Francisco, CA 94105, USA <br />
-            <br />
-            All rights reserved.
-          </Text>
-        </Section>
-      </Container>
-    </Body>
-  </Html>
+      {/* Company info footer */}
+      <div style={{
+        fontSize: '13px',
+        color: '#888',
+        borderTop: '1px solid #eee',
+        paddingTop: '18px',
+        marginTop: '24px'
+      }}>
+        <p style={{ margin: 0 }}>
+          ------------------------------------------------------------<br />
+          The DECK株式会社<br />
+          〒541-0054 大阪市中央区南本町2-1-1本町サザンビル1F<br />
+          Email: <a href="mailto:info@thedeck.jp" style={{ color: '#0052cc' }}>info@thedeck.jp</a><br />
+          URL: <a href="https://thedeck.jp/" style={{ color: '#0052cc' }}>https://thedeck.jp/</a>
+        </p>
+      </div>
+    </div>
+  </div>
 );
-
-EmailTemplate.PreviewProps = {
-  validationCode: 'DJZ-TLX',
-} as EmailTemplateProps;
-
-export default EmailTemplate;
-
-const footerText = {
-  fontSize: '12px',
-  color: '#b7b7b7',
-  lineHeight: '15px',
-  textAlign: 'left' as const,
-  marginBottom: '50px',
-};
-
-const footerLink = {
-  color: '#b7b7b7',
-  textDecoration: 'underline',
-};
-
-const footerLogos = {
-  marginBottom: '32px',
-  paddingLeft: '8px',
-  paddingRight: '8px',
-  display: 'block',
-};
-
-const socialMediaIcon = {
-  display: 'inline',
-  marginLeft: '32px',
-};
-
-const main = {
-  backgroundColor: '#ffffff',
-  margin: '0 auto',
-  fontFamily:
-    "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
-};
-
-const container = {
-  margin: '0 auto',
-  padding: '0px 20px',
-};
-
-const logoContainer = {
-  marginTop: '32px',
-};
-
-const h1 = {
-  color: '#1d1c1d',
-  fontSize: '36px',
-  fontWeight: '700',
-  margin: '30px 0',
-  padding: '0',
-  lineHeight: '42px',
-};
-
-const heroText = {
-  fontSize: '20px',
-  lineHeight: '28px',
-  marginBottom: '30px',
-};
-
-const codeBox = {
-  background: 'rgb(245, 244, 245)',
-  borderRadius: '4px',
-  marginBottom: '30px',
-  padding: '40px 10px',
-};
-
-const confirmationCodeText = {
-  fontSize: '30px',
-  textAlign: 'center' as const,
-  verticalAlign: 'middle',
-};
-
-const text = {
-  color: '#000',
-  fontSize: '14px',
-  lineHeight: '24px',
-};

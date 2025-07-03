@@ -28,7 +28,7 @@ model Mail {
   client      Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId    Int
   imageUrls   String[] // Array of storage URLs
-  status      String?  @default("pending")
+  status      String?  @default("notified")
   urgency     Int?     @default(1)
   notes       String?
   receivedAt  DateTime @default(now())
