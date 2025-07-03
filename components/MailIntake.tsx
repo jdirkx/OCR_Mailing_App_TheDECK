@@ -3,7 +3,7 @@
 import Image from "next/image";
 import React, { useState, useRef, useEffect } from "react";
 import Select from "react-select";
-import { addMailForClient, getAllClients } from "@/lib/actions";
+import { addMailForClient, getAllClients, getClientById } from "@/lib/actions";
 
 export default function MailIntake() {
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
@@ -13,6 +13,9 @@ export default function MailIntake() {
   const [modalImage, setModalImage] = useState<string | null>(null);
   const [companies, setCompanies] = useState<{ id: number; name: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [clientEmail, setClientEmail] = useState<string | null>(null); // New state for client email
+
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -43,8 +46,8 @@ export default function MailIntake() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setIsSubmitting(true);
+    setUploadProgress(0);
     
-    // Client-side validation
     if (!selectedClient) {
       alert("Please select a client!");
       setIsSubmitting(false);
@@ -58,33 +61,81 @@ export default function MailIntake() {
     }
     
     try {
-      // Upload images to storage (this is a placeholder - implement your actual upload logic)
+      // 1. Fetch client email from database
+      const client = await getClientById(selectedClient);
+      if (!client?.email) {
+        throw new Error("Client email not found");
+      }
+      setClientEmail(client.email);
+      setUploadProgress(25);
+
+      // 2. Upload images to storage
       const imageUrls = await uploadImages(images);
+      setUploadProgress(50);
       
-      // Add mail to database
+      // 3. Add mail to database
       await addMailForClient(selectedClient, {
         imageUrls,
         notes
       });
+      setUploadProgress(75);
       
-      alert("Mail successfully added!");
+      // 4. Send email with attachments
+      await sendEmailWithAttachments(images, client.email); // Pass client email
+      setUploadProgress(100);
+      
+      alert("Mail successfully added and email sent!");
       
       // Reset form
       setSelectedClient(null);
       setImages([]);
       setImagePreviews([]);
       setNotes("");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Submission failed:", error);
-      alert("Failed to submit mail. Please try again.");
+      alert(`Failed to process mail: ${error.message}`);
     } finally {
       setIsSubmitting(false);
+      setUploadProgress(0);
+    }
+  }
+
+  // Update this function to accept client email
+  async function sendEmailWithAttachments(files: File[], toEmail: string) {
+    const formData = new FormData();
+    
+    // Add files to form data
+    files.forEach(file => {
+      formData.append("attachments", file);
+    });
+    
+    // Add metadata with client email
+    formData.append("to", toEmail);
+    formData.append("subject", `New Mail for Client ${selectedClient}`);
+    formData.append("notes", notes);
+    
+    try {
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error("Email sending failed");
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error("Email sending error:", error);
+      throw error;
     }
   }
 
   async function uploadImages(files: File[]): Promise<string[]> {
     // Implement your actual image upload logic here
     // This should return an array of image URLs
+    // For demo, we'll simulate upload with a delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
     return files.map(file => URL.createObjectURL(file));
   }
 
@@ -107,6 +158,16 @@ export default function MailIntake() {
         <h1 className="text-2xl font-bold mb-4 text-gray-800">
           UPLOAD
         </h1>
+
+        {/* Upload Progress */}
+        {isSubmitting && (
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div 
+              className="bg-blue-600 h-2.5 rounded-full" 
+              style={{ width: `${uploadProgress}%` }}
+            ></div>
+          </div>
+        )}
 
         {/* Client Dropdown */}
         <div>
@@ -189,7 +250,7 @@ export default function MailIntake() {
           className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Submitting..." : "Submit"}
+          {isSubmitting ? "Processing..." : "Submit"}
         </button>
 
         {/* Modal for enlarged image */}

@@ -1,30 +1,8 @@
 // lib/action.ts
 "use server"
 import { PrismaClient } from '@prisma/client';
-import { Resend } from 'resend'
-import { EmailTemplate } from '@/components/EmailTemplate'
 
 const prisma = new PrismaClient();
-
-const tips = [
-  { id: 1, description: "Always search before asking." },
-  { id: 2, description: "Use clear and descriptive titles." },
-  { id: 3, description: "Format your code properly." },
-];
-
-async function send() {
-  'use server'
-  console.log('hello world')
-
-  const resend = new Resend(process.env.RESEND_API_KEY);
-
-  const { data, error } = await resend.emails.send({
-    from: 'Acme <onboarding@resend.dev>',
-    to: ['matthewnguyen1230@gmail.com'],
-    subject: 'Hello world',
-    react: EmailTemplate({ tips }),
-  });
-}
 
 // Get client (client) information by ID
 export async function getClientById(clientId: number) {

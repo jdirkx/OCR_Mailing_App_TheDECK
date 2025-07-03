@@ -15,7 +15,7 @@ export default function SendTestEmailPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: 'matthewnguyen1230@gmail.com', // change to your email
+          to: 'matthewnguyen1230@gmail.com', // email reciepient 
           subject: 'Test Email from Next.js',
           text: 'Hello! This is a test email sent via Resend.',
         }),
