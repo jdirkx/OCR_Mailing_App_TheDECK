@@ -1,10 +1,9 @@
-// lib/action.ts
 "use server"
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Get client (client) information by ID
+// Get client information by ID (includes secondary emails)
 export async function getClientById(clientId: number) {
   return await prisma.client.findUnique({
     where: { id: clientId },
@@ -12,31 +11,41 @@ export async function getClientById(clientId: number) {
   });
 }
 
-// Client List:
-// Get all companies
-
+// Get all clients (includes secondary emails)
 export async function getAllClients() {
   return await prisma.client.findMany({ orderBy: { id: "asc" } });
 }
 
-export async function addClient(name: string, email: string) {
-  return await prisma.client.create({ data: { name, email } });
-}
-
-export async function editClient(id: number, name: string, email: string) {
-  return await prisma.client.update({
-    where: { id },
-    data: { name, email },
+// Add a client with primary and secondary emails
+export async function addClient(
+  name: string,
+  primaryEmail: string,
+  secondaryEmails: string[] = []
+) {
+  return await prisma.client.create({
+    data: { name, primaryEmail, secondaryEmails },
   });
 }
 
+// Edit a client, including emails
+export async function editClient(
+  id: number,
+  name: string,
+  primaryEmail: string,
+  secondaryEmails: string[] = []
+) {
+  return await prisma.client.update({
+    where: { id },
+    data: { name, primaryEmail, secondaryEmails },
+  });
+}
+
+// Delete a client by ID
 export async function deleteClient(id: number) {
   return await prisma.client.delete({ where: { id } });
 }
 
-
-// Mail Intake:
-// Add mail corresponding to a client
+// Mail Intake: Add mail for a client
 export async function addMailForClient(
   clientId: number,
   mailData: {

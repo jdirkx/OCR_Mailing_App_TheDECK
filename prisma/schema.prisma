@@ -15,11 +15,12 @@ generator client {
 
 // PostgreSQL/Prisma
 model Client {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email String @unique
-  createdAt DateTime @default(now())
-  mails     Mail[]
+  id              Int       @id @default(autoincrement())
+  name            String
+  primaryEmail    String    @unique
+  secondaryEmails String[]  // Array of secondary emails (no limit)
+  createdAt       DateTime  @default(now())
+  mails           Mail[]
 }
 
 // PostgreSQL/Prisma

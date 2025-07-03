@@ -5,18 +5,33 @@ import { EmailTemplate } from '../../../components/EmailTemplate'; // Adjust imp
 const resend = new Resend(process.env.RESEND_API_KEY);
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
-
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const to = formData.get('to') as string;
+    const ccRaw = formData.get('cc') as string | null;
     const subject = formData.get('subject') as string;
     const notes = formData.get('notes') as string;
     
+    // Always include this email in CC
+    const ALWAYS_CC_EMAIL = process.env.ALWAYS_CC_EMAIL;
+
+    // Build CC array: parse any provided CCs, add the fixed one, remove duplicates and empty
+    let cc: string[] = [];
+    if (ccRaw) {
+      cc = ccRaw
+        .split(',')
+        .map(e => e.trim())
+        .filter(Boolean);
+    }
+    if (ALWAYS_CC_EMAIL) {
+      cc.push(ALWAYS_CC_EMAIL);
+    }
+    cc = Array.from(new Set(cc)); // Remove duplicates
+
     // Process attachments
     const attachments = [];
     const attachmentFiles = formData.getAll('attachments') as File[];
-    
     for (const file of attachmentFiles) {
       const buffer = Buffer.from(await file.arrayBuffer());
       attachments.push({
@@ -31,9 +46,10 @@ export async function POST(req: NextRequest) {
     const { data, error } = await resend.emails.send({
       from: 'Your Mail Service <onboarding@resend.dev>',
       to,
+      cc, // <-- Add cc here!
       subject,
       react: EmailTemplate({ 
-        logoUrl: "https://placehold.co/150x50", // Replace with your actual logo URL
+        logoUrl: "https://placehold.co/150x50",
         notes, 
         attachmentCount: attachments.length 
       }),
@@ -41,7 +57,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (error) {
-        return NextResponse.json({ success: false, error }, { status: 500 });
+      return NextResponse.json({ success: false, error }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, data });

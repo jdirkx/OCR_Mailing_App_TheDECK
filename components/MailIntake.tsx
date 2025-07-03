@@ -5,145 +5,160 @@ import React, { useState, useRef, useEffect } from "react";
 import Select from "react-select";
 import { addMailForClient, getAllClients, getClientById } from "@/lib/actions";
 
+// Define the shape of a Client object
+type Client = {
+  id: number;
+  name: string;
+  primaryEmail: string;
+  secondaryEmails: string[];
+};
+
 export default function MailIntake() {
-  const [selectedClient, setSelectedClient] = useState<number | null>(null);
+  // State for selected client ID and client details
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+
+  // State for image uploads and previews
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
+  // State for mail notes and modal image view
   const [notes, setNotes] = useState("");
   const [modalImage, setModalImage] = useState<string | null>(null);
-  const [companies, setCompanies] = useState<{ id: number; name: string }[]>([]);
+
+  // State for the list of companies (clients)
+  const [companies, setCompanies] = useState<Client[]>([]);
+
+  // State for form submission and progress
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [clientEmail, setClientEmail] = useState<string | null>(null); // New state for client email
 
-
+  // Ref for file input (to trigger file picker)
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch companies from database
+  // Fetch all clients on component mount
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
         const companiesData = await getAllClients();
         setCompanies(companiesData);
       } catch (error) {
-        console.error("Failed to fetch companies:", error);
         alert("Failed to load companies. Please try again later.");
       }
     };
-    
     fetchCompanies();
   }, []);
 
+  // Fetch selected client details when client selection changes
+  useEffect(() => {
+    if (!selectedClientId) {
+      setSelectedClient(null);
+      return;
+    }
+    const fetchClient = async () => {
+      const client = await getClientById(selectedClientId);
+      setSelectedClient(client || null);
+    };
+    fetchClient();
+  }, [selectedClientId]);
+
+  // Handle image file selection and generate previews
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
       setImages(filesArray);
-      const previews = filesArray.map(file => URL.createObjectURL(file));
-      setImagePreviews(previews);
+      setImagePreviews(filesArray.map(file => URL.createObjectURL(file)));
     }
   }
 
+  // Handle form submission: upload images, save mail, send email
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setIsSubmitting(true);
     setUploadProgress(0);
-    
-    if (!selectedClient) {
+
+    // Basic validation
+    if (!selectedClientId || !selectedClient) {
       alert("Please select a client!");
       setIsSubmitting(false);
       return;
     }
-    
     if (images.length < 1) {
       alert("Please select at least one image!");
       setIsSubmitting(false);
       return;
     }
-    
+
     try {
-      // 1. Fetch client email from database
-      const client = await getClientById(selectedClient);
-      if (!client?.email) {
-        throw new Error("Client email not found");
-      }
-      setClientEmail(client.email);
       setUploadProgress(25);
 
-      // 2. Upload images to storage
+      // 1. Upload images (simulate upload)
       const imageUrls = await uploadImages(images);
       setUploadProgress(50);
-      
-      // 3. Add mail to database
-      await addMailForClient(selectedClient, {
-        imageUrls,
-        notes
-      });
+
+      // 2. Save mail record to database
+      await addMailForClient(selectedClientId, { imageUrls, notes });
       setUploadProgress(75);
-      
-      // 4. Send email with attachments
-      await sendEmailWithAttachments(images, client.email); // Pass client email
+
+      // 3. Send email to primary, CC all secondary emails
+      await sendEmailWithAttachments(
+        images,
+        selectedClient.primaryEmail,
+        selectedClient.secondaryEmails
+      );
       setUploadProgress(100);
-      
-      alert("Mail successfully added and email sent!");
-      
-      // Reset form
+
+      alert("✅ Mail successfully added and email sent!");
+
+      // Reset form state
+      setSelectedClientId(null);
       setSelectedClient(null);
       setImages([]);
       setImagePreviews([]);
       setNotes("");
     } catch (error: any) {
-      console.error("Submission failed:", error);
-      alert(`Failed to process mail: ${error.message}`);
+      alert(`❌Failed to process mail: ${error.message}`);
     } finally {
       setIsSubmitting(false);
       setUploadProgress(0);
     }
   }
 
-  // Update this function to accept client email
-  async function sendEmailWithAttachments(files: File[], toEmail: string) {
+  // Send email with attachments, To: primary, CC: all secondary
+  async function sendEmailWithAttachments(files: File[], toEmail: string, ccEmails: string[]) {
     const formData = new FormData();
-    
-    // Add files to form data
     files.forEach(file => {
       formData.append("attachments", file);
     });
-    
-    // Add metadata with client email
     formData.append("to", toEmail);
     formData.append("subject", `Your mail has arrived at The DECK`);
     formData.append("notes", notes);
-    
-    try {
-      const response = await fetch("/api/send-email", {
-        method: "POST",
-        body: formData,
-      });
-      
-      if (!response.ok) {
-        throw new Error("Email sending failed");
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error("Email sending error:", error);
-      throw error;
+    // Add CC field if there are secondary emails
+    if (ccEmails.length > 0) {
+      formData.append("cc", ccEmails.join(','));
     }
+
+    const response = await fetch("/api/send-email", {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) throw new Error("Email sending failed");
+    return await response.json();
   }
 
+  // Simulate image upload (replace with real upload logic as needed)
   async function uploadImages(files: File[]): Promise<string[]> {
-    // Implement your actual image upload logic here
-    // This should return an array of image URLs
-    // For demo, we'll simulate upload with a delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     return files.map(file => URL.createObjectURL(file));
   }
 
+  // Remove an image from selection and previews
   function removeImage(idx: number) {
     setImages(prev => prev.filter((_, i) => i !== idx));
     setImagePreviews(prev => prev.filter((_, i) => i !== idx));
   }
 
+  // Prepare client options for the select dropdown
   const clientOptions = companies.map(c => ({
     value: c.id,
     label: c.name,
@@ -159,7 +174,7 @@ export default function MailIntake() {
           UPLOAD
         </h1>
 
-        {/* Upload Progress */}
+        {/* Show upload progress bar during submission */}
         {isSubmitting && (
           <div className="w-full bg-gray-200 rounded-full h-2.5">
             <div 
@@ -169,21 +184,38 @@ export default function MailIntake() {
           </div>
         )}
 
-        {/* Client Dropdown */}
+        {/* Client selection dropdown */}
         <div>
           <label className="block mb-1 font-medium text-gray-700">
             Select Client
           </label>
           <Select
             options={clientOptions}
-            onChange={option => setSelectedClient(option ? option.value : null)}
+            onChange={option => setSelectedClientId(option ? option.value : null)}
             placeholder="Search or select a Client..."
             className="text-black"
             isSearchable
+            value={clientOptions.find(opt => opt.value === selectedClientId) || null}
           />
         </div>
 
-        {/* Custom File Picker Button */}
+        {/* Display recipient and CC emails when a client is selected */}
+        {selectedClient && (
+          <div className="mb-3">
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">To:</span> {selectedClient.primaryEmail}
+            </div>
+            <div className="text-sm text-gray-600 mt-1">
+              <span className="font-semibold">CC:</span>{" "}
+              {selectedClient.secondaryEmails.length > 0
+                ? selectedClient.secondaryEmails.join(", ")
+                : <span className="italic text-gray-400">None</span>
+              }
+            </div>
+          </div>
+        )}
+
+        {/* File picker for mail photos */}
         <div>
           <label className="block mb-1 font-medium text-gray-700">
             Mail Photos
@@ -203,6 +235,7 @@ export default function MailIntake() {
             ref={fileInputRef}
             className="hidden"
           />
+          {/* Show image previews with remove buttons */}
           {imagePreviews.length > 0 && (
             <div className="mt-2 flex gap-2 flex-wrap">
               {imagePreviews.map((src, idx) => (
@@ -215,7 +248,7 @@ export default function MailIntake() {
                     className="h-20 w-20 object-cover rounded border cursor-pointer"
                     onClick={() => setModalImage(src)}
                   />
-                  {/* Remove button */}
+                  {/* Remove image button */}
                   <button
                     type="button"
                     onClick={() => removeImage(idx)}
@@ -230,7 +263,7 @@ export default function MailIntake() {
           )}
         </div>
         
-        {/* Notes */}
+        {/* Notes textarea */}
         <div>
           <label className="block mb-1 font-medium text-gray-700">
             Notes
@@ -244,7 +277,7 @@ export default function MailIntake() {
           />
         </div>
 
-        {/* Submit Button */}
+        {/* Submit button */}
         <button
           type="submit"
           className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50"
@@ -253,7 +286,7 @@ export default function MailIntake() {
           {isSubmitting ? "Processing..." : "Submit"}
         </button>
 
-        {/* Modal for enlarged image */}
+        {/* Modal to show enlarged image preview */}
         {modalImage && (
           <div
             className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
