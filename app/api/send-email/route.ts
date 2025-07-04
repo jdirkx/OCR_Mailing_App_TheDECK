@@ -43,6 +43,37 @@ export async function POST(req: NextRequest) {
 
     const logoUrl = `${BASE_URL}/logo.png`;
 
+    // ---- MOCK MODE: skip actual email send in dev/test ----
+    if (
+      process.env.SKIP_EMAIL_SEND === 'true' ||
+      process.env.NODE_ENV === 'development'
+    ) {
+      console.log('MOCK EMAIL SEND (not actually sending):', {
+        from: 'Your Mail Service <onboarding@resend.dev>',
+        to,
+        cc,
+        subject,
+        notes,
+        attachments: attachments.map(a => a.filename),
+        logoUrl,
+      });
+      return NextResponse.json({
+        success: true,
+        mock: true,
+        message: 'Email send skipped (mock mode)',
+        data: {
+          from: 'Your Mail Service <onboarding@resend.dev>',
+          to,
+          cc,
+          subject,
+          notes,
+          attachments: attachments.map(a => a.filename),
+          logoUrl,
+        },
+      });
+    }
+    // -------------------------------------------------------
+
     // Pass the logo URL to the template
     const { data, error } = await resend.emails.send({
       from: 'Your Mail Service <onboarding@resend.dev>',
