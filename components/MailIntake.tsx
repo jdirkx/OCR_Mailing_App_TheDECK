@@ -77,8 +77,7 @@ export default function MailIntake() {
     setIsSubmitting(true);
     setUploadProgress(0);
 
-    // Basic validation
-    if (!selectedClientId || !selectedClient) {
+    if (!selectedClientId) {
       alert("Please select a client!");
       setIsSubmitting(false);
       return;
@@ -100,13 +99,22 @@ export default function MailIntake() {
       await addMailForClient(selectedClientId, { imageUrls, notes });
       setUploadProgress(75);
 
-      // 3. Send email to primary, CC all secondary emails
+      // 3. Fetch the latest client data for accurate CCs
+      const freshClient = await getClientById(selectedClientId);
+      if (!freshClient) {
+        throw new Error("Client not found. Please try again.");
+      }
+
+      setUploadProgress(100);
+
+      console.log("secondaryEmails: " + freshClient.secondaryEmails);
+      // 4. Send email to primary, CC all current secondary emails
       await sendEmailWithAttachments(
         images,
-        selectedClient.primaryEmail,
-        selectedClient.secondaryEmails
+        freshClient.primaryEmail,
+        freshClient.secondaryEmails
       );
-      setUploadProgress(100);
+
 
       alert("✅ Mail successfully added and email sent!");
 
@@ -133,6 +141,7 @@ export default function MailIntake() {
     formData.append("to", toEmail);
     formData.append("subject", `Your mail has arrived at The DECK`);
     formData.append("notes", notes);
+
     // Add CC field if there are secondary emails
     if (ccEmails.length > 0) {
       formData.append("cc", ccEmails.join(','));

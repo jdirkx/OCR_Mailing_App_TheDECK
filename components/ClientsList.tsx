@@ -131,7 +131,7 @@ export default function ClientPage() {
       <h1 className="text-2xl font-bold mb-6 text-black">CLIENTS</h1>
 
       {/* Add new client form */}
-      <div className="mb-8 p-4 border rounded shadow-sm bg-black">
+      <div className="mb-8 p-4 border rounded shadow-sm text-white bg-black">
         <h2 className="text-xl font-semibold mb-4">Add New Client</h2>
         <div className="flex flex-col gap-4">
           <input
@@ -323,7 +323,7 @@ export default function ClientPage() {
         {/* Mobile Cards */}
         <div className="sm:hidden flex flex-col gap-4 p-2">
           {filteredClients.map(client => (
-            <div key={client.id} className="border rounded p-4 shadow-sm bg-black">
+            <div key={client.id} className="border rounded p-4 shadow-sm bg-white text-black">
               <div className="mb-2">
                 <span className="font-semibold">Name: </span>
                 {editingId === client.id ? (
@@ -331,7 +331,7 @@ export default function ClientPage() {
                     type="text"
                     value={editName}
                     onChange={e => setEditName(e.target.value)}
-                    className="border rounded px-2 py-1 w-full"
+                    className="border rounded px-2 py-1 w-full bg-white text-black"
                   />
                 ) : (
                   client.name
@@ -344,7 +344,7 @@ export default function ClientPage() {
                     type="email"
                     value={editPrimaryEmail}
                     onChange={e => setEditPrimaryEmail(e.target.value)}
-                    className="border rounded px-2 py-1 w-full"
+                    className="border rounded px-2 py-1 w-full bg-white text-black"
                   />
                 ) : (
                   client.primaryEmail
@@ -363,7 +363,7 @@ export default function ClientPage() {
                           onChange={e =>
                             handleSecondaryEmailChange(setEditSecondaryEmails, idx, e.target.value, editSecondaryEmails)
                           }
-                          className="border rounded px-2 py-1 flex-1"
+                          className="border rounded px-2 py-1 flex-1 bg-white text-black"
                         />
                         <button
                           type="button"

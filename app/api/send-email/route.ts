@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
       cc.push(ALWAYS_CC_EMAIL);
     }
     cc = Array.from(new Set(cc)); // Remove duplicates
+    console.log("cc:", cc);
 
     // Process attachments
     const attachments = [];
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await resend.emails.send({
       from: 'Your Mail Service <onboarding@resend.dev>',
       to,
-      cc, // <-- Add cc here!
+      cc, 
       subject,
       react: EmailTemplate({ 
         logoUrl: "https://placehold.co/150x50",
