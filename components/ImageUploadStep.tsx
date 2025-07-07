@@ -183,13 +183,6 @@ export default function ImageUploadStep({ onNext }: ImageUploadStepProps) {
                 </svg>
               </button>
             </div>
-            <button
-              onClick={() => setModalImageIdx(null)}
-              className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center"
-              aria-label="Close"
-            >
-              &times;
-            </button>
           </div>
         </div>
       )}

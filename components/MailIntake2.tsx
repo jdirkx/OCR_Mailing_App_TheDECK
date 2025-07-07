@@ -43,6 +43,9 @@ export default function MailIntakeStep2({
   // Next and back button for enlarged images
   const [modalImageIdx, setModalImageIdx] = useState<number | null>(null);
   
+  // Whether the confirmation modal is open
+  const [showConfirm, setShowConfirm] = useState(false);
+
   // Fetch companies on mount
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -110,8 +113,8 @@ export default function MailIntakeStep2({
   }));
 
   // Handle form submission
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(e?: React.FormEvent | Event) {
+    if (e && 'preventDefault' in e) e.preventDefault();
 
     // Validation handled here, not via disabled button
     if (!selectedClientId) {
@@ -296,7 +299,10 @@ export default function MailIntakeStep2({
         </div>
 
         {/* Submit button - only disabled while submitting */}
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={e => {
+          e.preventDefault();
+          setShowConfirm(true);
+        }}>
           <button
             type="submit"
             className={`w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors font-semibold ${
@@ -307,6 +313,32 @@ export default function MailIntakeStep2({
             {isSubmitting ? "Processing..." : "Submit"}
           </button>
         </form>
+
+        {showConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+              <h2 className="text-xl font-semibold mb-4">Confirm Submission</h2>
+              <p className="mb-6">Are you sure you want to submit this mail?</p>
+              <div className="flex justify-center gap-4">
+                <button
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                  onClick={async () => {
+                    setShowConfirm(false);
+                    await handleSubmit(new Event('submit', { bubbles: true, cancelable: true }));
+                  }}
+                >
+                  Yes, Submit
+                </button>
+                <button
+                  className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition"
+                  onClick={() => setShowConfirm(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Overlay for selecting images */}
@@ -390,7 +422,7 @@ export default function MailIntakeStep2({
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
               onClick={closeOverlay}
             >
-              Done
+              Select
             </button>
           </div>
         </div>
@@ -434,12 +466,6 @@ export default function MailIntakeStep2({
                 </svg>
               </button>
             </div>
-            <button
-              onClick={closeModal}
-              className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center"
-            >
-              &times;
-            </button>
           </div>
         </div>
       )}
@@ -450,7 +476,7 @@ export default function MailIntakeStep2({
         onClick={onDone}
         className="mt-8 w-full max-w-2xl bg-gray-400 text-white py-2 rounded hover:bg-gray-500 transition-colors font-semibold"
       >
-        Done
+        Back
       </button>
     </div>
   );
