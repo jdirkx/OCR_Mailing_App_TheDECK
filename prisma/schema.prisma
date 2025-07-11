@@ -1,38 +1,39 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-// PostgreSQL/Prisma
 model Client {
-  id              Int       @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   name            String
-  primaryEmail    String    @unique
-  secondaryEmails String[]  // Array of secondary emails (no limit)
-  createdAt       DateTime  @default(now())
+  primaryEmail    String   @unique
+  secondaryEmails String[]
+  createdAt       DateTime @default(now())
   mails           Mail[]
 }
 
-// PostgreSQL/Prisma
 model Mail {
-  id          Int      @id @default(autoincrement())
-  client      Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  id          Int       @id @default(autoincrement())
   clientId    Int
-  imageUrls   String[] // Array of storage URLs
-  status      String?  @default("notified")
-  urgency     Int?     @default(1)
+  imageUrls   String[]
+  status      String?   @default("notified")
+  urgency     Int?      @default(1)
   notes       String?
-  receivedAt  DateTime @default(now())
+  receivedAt  DateTime  @default(now())
   notifiedAt  DateTime?
   collectedAt DateTime?
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String   @id
+  timestamp DateTime @default(now())
+  name      String
+  staffCode String
+  action    String
+  details   Json?
 }
