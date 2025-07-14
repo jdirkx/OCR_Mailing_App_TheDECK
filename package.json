@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "install-opencv": "node preinstall_opencv.js"
+
   },
   "packageManager": "npm@15.3.3",
   "overrides": {

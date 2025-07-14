@@ -1,3 +1,12 @@
+Repository for scripts/code implementing OCR to the Next.js mailing app created by [Matthew Nguyen](https://github.com/matthewnguyen1230) for [The DECK](https://thedeck.jp/)
+
+Notes for opencv for node js:
+- Download [OpenCV4nodejs version 4.5.5](https://github.com/opencv/opencv/releases/tag/4.5.5) and add to PATH, ideally as C:\opencv\build\x64\vc15\bin
+- Add items in .env to the .env file
+- Make sure to install dotenv with `npm install dotenv`
+- Add preinstall_opencv.js to node_modules
+- Add line to scripts in package.json then run `npm run install-opencv`
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
