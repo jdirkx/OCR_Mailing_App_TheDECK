@@ -33,7 +33,6 @@ export default function MailIntakeStep2({
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   // Overlay/modal state
   const [overlayOpen, setOverlayOpen] = useState(false);
-  const [modalImage, setModalImage] = useState<string | null>(null);
 
   // Notes for the mail
   const [notes, setNotes] = useState("");
@@ -155,14 +154,19 @@ export default function MailIntakeStep2({
       alert("✅ Mail successfully added and email sent!");
 
       // Mark submitted images as used
+    try {
       setUsed(prev => prev.map((v, i) => (selectedIndices.includes(i) ? true : v)));
       setSelectedIndices([]);
       setNotes("");
       setSelectedClientId(null);
       setSelectedClient(null);
       setOverlayOpen(false);
-    } catch (error: any) {
-      alert(`❌Failed to process mail: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        alert(`❌Failed to process mail: ${error.message}`);
+      } else {
+        alert("❌Failed to process mail: Unknown error");
+      }
     } finally {
       setIsSubmitting(false);
       setUploadProgress(0);
