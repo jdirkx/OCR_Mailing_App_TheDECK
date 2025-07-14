@@ -154,7 +154,6 @@ export default function MailIntakeStep2({
       alert("✅ Mail successfully added and email sent!");
 
       // Mark submitted images as used
-    try {
       setUsed(prev => prev.map((v, i) => (selectedIndices.includes(i) ? true : v)));
       setSelectedIndices([]);
       setNotes("");
