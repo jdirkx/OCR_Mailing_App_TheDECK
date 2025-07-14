@@ -2,34 +2,34 @@
 
 import React, { useRef, useState } from "react";
 import Image from "next/image";
+import { useMail } from "./context";
 
-type ImageUploadStepProps = {
-  onNext: (images: File[], previews: string[]) => void;
-};
-
-export default function ImageUploadStep({ onNext }: ImageUploadStepProps) {
-  const [images, setImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [modalImageIdx, setModalImageIdx] = useState<number | null>(null);
+export default function ImageUploadStep() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploadedImages, setUploadedImages, clearMail } = useMail();
+  const [modalImageIdx, setModalImageIdx] = useState<number | null>(null);
 
-  // Handle file selection and generate previews
+  // Handle file selection
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
-      setImages(prev => [...prev, ...filesArray]);
-      setImagePreviews(prev => [
-        ...prev,
-        ...filesArray.map(file => URL.createObjectURL(file)),
-      ]);
+
+      const processedImages = filesArray.map(file => ({
+        file,
+        preview: URL.createObjectURL(file),
+        ocrText: "",
+        assignedClientId: null,
+        sent: false,
+        notes: "",
+      }));
+
+      setUploadedImages(prev => [...prev, ...processedImages]);
     }
   }
 
-  // Remove an image from both state arrays
+  // Remove an image by index
   function removeImage(idx: number) {
-    setImages(prev => prev.filter((_, i) => i !== idx));
-    setImagePreviews(prev => prev.filter((_, i) => i !== idx));
-    // If the removed image is currently enlarged, close the modal
+    setUploadedImages(prev => prev.filter((_, i) => i !== idx));
     setModalImageIdx(current =>
       current !== null && current === idx
         ? null
@@ -39,13 +39,13 @@ export default function ImageUploadStep({ onNext }: ImageUploadStepProps) {
     );
   }
 
-  // Proceed to next step
+  // Proceed to next step (likely a router push or multi-step manager)
   function handleNext() {
-    if (images.length === 0) {
+    if (uploadedImages.length === 0) {
       alert("Please upload at least one image before proceeding.");
       return;
     }
-    onNext(images, imagePreviews);
+    // you could navigate to next step or render next component
   }
 
   return (
@@ -78,9 +78,9 @@ export default function ImageUploadStep({ onNext }: ImageUploadStepProps) {
         </div>
 
         {/* Image Previews */}
-        {imagePreviews.length > 0 && (
+        {uploadedImages.length > 0 && (
           <div className="flex flex-wrap gap-4 justify-center mb-6">
-            {imagePreviews.map((src, idx) => (
+            {uploadedImages.map((img, idx) => (
               <div
                 key={idx}
                 className="relative cursor-pointer"
@@ -100,7 +100,7 @@ export default function ImageUploadStep({ onNext }: ImageUploadStepProps) {
                 title="Click to enlarge"
               >
                 <Image
-                  src={src}
+                  src={img.preview}
                   alt={`Preview ${idx + 1}`}
                   width={120}
                   height={120}
@@ -128,7 +128,7 @@ export default function ImageUploadStep({ onNext }: ImageUploadStepProps) {
           type="button"
           onClick={handleNext}
           className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition-colors font-semibold disabled:opacity-50"
-          disabled={images.length === 0}
+          disabled={uploadedImages.length === 0}
         >
           Next
         </button>
@@ -142,7 +142,7 @@ export default function ImageUploadStep({ onNext }: ImageUploadStepProps) {
         >
           <div className="relative flex flex-col items-center">
             <Image
-              src={imagePreviews[modalImageIdx]}
+              src={uploadedImages[modalImageIdx].preview}
               alt={`Enlarged preview ${modalImageIdx + 1}`}
               width={800}
               height={600}
@@ -171,10 +171,10 @@ export default function ImageUploadStep({ onNext }: ImageUploadStepProps) {
                 onClick={e => {
                   e.stopPropagation();
                   setModalImageIdx(idx =>
-                    idx !== null && idx < imagePreviews.length - 1 ? idx + 1 : idx
+                    idx !== null && idx < uploadedImages.length - 1 ? idx + 1 : idx
                   );
                 }}
-                disabled={modalImageIdx === imagePreviews.length - 1}
+                disabled={modalImageIdx === uploadedImages.length - 1}
                 className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50 flex items-center justify-center"
                 aria-label="Next image"
               >

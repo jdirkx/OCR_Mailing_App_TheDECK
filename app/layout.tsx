@@ -60,7 +60,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={workSans.variable} suppressHydrationWarning>
         <TransitionLoader />
-        {children}
+          {children}
       </body>
     </html>
   );
