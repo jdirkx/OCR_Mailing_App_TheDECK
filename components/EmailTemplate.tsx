@@ -7,7 +7,7 @@ interface EmailTemplateProps {
 }
 
 // Export as a plain function, not React.FC!
-export function EmailTemplate({
+export async function EmailTemplate({
   logoUrl,
   attachmentCount,
   notes,
