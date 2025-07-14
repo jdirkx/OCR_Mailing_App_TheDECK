@@ -3,7 +3,7 @@
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
-import { addMailForClient, getAllClients, getClientById } from "@/lib/actions";
+import { getAllClients, getClientById } from "@/lib/actions";
 
 type Client = {
   id: number;
@@ -136,7 +136,7 @@ export default function MailIntakeStep2({
       const imageUrls = await uploadImages(selectedFiles);
       setUploadProgress(50);
 
-      await addMailForClient(selectedClientId, { imageUrls, notes });
+      // await addMailForClient(selectedClientId, { imageUrls, notes }); // TODO: mail upload to database not required
       setUploadProgress(75);
 
       // Fetch the latest client data for accurate CCs
