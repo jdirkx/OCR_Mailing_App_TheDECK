@@ -8,6 +8,8 @@ import {
   deleteClient as dbDeleteClient,
 } from "@/lib/actions";
 
+type SetEmails = React.Dispatch<React.SetStateAction<string[]>>;
+
 export default function ClientPage() {
   // Updated client shape!
   const [clients, setClients] = useState<
@@ -111,17 +113,22 @@ export default function ClientPage() {
   }
 
   // Handlers for dynamic secondary email fields
-  function handleSecondaryEmailChange(setter: any, idx: number, value: string, emails: string[]) {
+  function handleSecondaryEmailChange(
+    setter: SetEmails,
+    idx: number,
+    value: string,
+    emails: string[]
+  ) {
     const updated = [...emails];
     updated[idx] = value;
     setter(updated);
   }
 
-  function addSecondaryEmailField(setter: any, emails: string[]) {
+  function addSecondaryEmailField(setter: SetEmails, emails: string[]) {
     setter([...emails, ""]);
   }
 
-  function removeSecondaryEmailField(setter: any, idx: number, emails: string[]) {
+  function removeSecondaryEmailField(setter: SetEmails, idx: number, emails: string[]) {
     if (emails.length === 1) return; // Always keep at least one field
     setter(emails.filter((_, i) => i !== idx));
   }
