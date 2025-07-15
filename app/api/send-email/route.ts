@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       cc: cc.length > 0 ? cc : undefined,
       subject: subject as string,
       react: EmailTemplate({
-        logoUrl: 'https://placehold.co/150x50',
+        logoUrl: 'https://thedeck.jp/wp/wp-content/themes/thedeck-new/img/logo.png',
         notes: notes as string,
         attachmentCount: attachments.length,
       }),
