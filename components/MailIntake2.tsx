@@ -171,12 +171,6 @@ export default function MailIntakeStep2({
     }
   }
 
-  // Simulate image upload (replace with real upload logic as needed)
-  async function uploadImages(files: File[]): Promise<string[]> {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return files.map(file => URL.createObjectURL(file));
-  }
-
   // Send email with attachments
   async function sendEmailWithAttachments(files: File[], toEmail: string, ccEmails: string[]) {
     const formData = new FormData();

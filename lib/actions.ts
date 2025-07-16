@@ -1,6 +1,5 @@
 "use server"
 import { PrismaClient, Prisma } from '@prisma/client'; // updated
-import { JsonValue } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
 
