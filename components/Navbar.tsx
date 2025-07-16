@@ -1,9 +1,10 @@
-import React from 'react';
+// components/Navbar.tsx
+"use client";
 import Link from 'next/link';
-import { auth } from "@/auth";
+import { useSession } from "next-auth/react";
 
-const Navbar = async () => {
-  const session = await auth();
+export default function Navbar() {
+  const { data: session } = useSession();
 
   return (
     <header className="px-5 py-3 bg-black shadow-sm font-work-sans text-lg">
@@ -24,6 +25,4 @@ const Navbar = async () => {
       </nav>
     </header>
   );
-};
-
-export default Navbar;
+}

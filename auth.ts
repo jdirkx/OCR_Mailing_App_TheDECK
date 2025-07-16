@@ -1,31 +1,50 @@
-// import NextAuth from "next-auth"
-// import Google from "next-auth/providers/google"
- 
-// export const { handlers, auth, signIn, signOut } = NextAuth({
-//   providers: [Google],
-// })
+// src/auth.ts or app/auth.ts or @/auth.ts
 
-import NextAuth from "next-auth";
+import NextAuth, { type NextAuthConfig } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
+// Comma-separated email allow-list, e.g. "foo@bar.com,alice@bob.com"
 const ALLOWED_EMAILS = (process.env.AUTHORIZED_EMAILS || "")
   .split(",")
-  .map(email => email.trim());
+  .map(email => email.trim())
+  .filter(Boolean);
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const authOptions: NextAuthConfig = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
+  session: { strategy: "jwt" },
+  secret: process.env.AUTH_SECRET, // recommended for production
   callbacks: {
-    async signIn({ user, account, profile }) {
-      // Restrict to specific email
-      if (user.email && ALLOWED_EMAILS.includes(user.email)) {
-        return true;
+    // Only allow sign-in for authorized emails
+    async signIn({ user }) {
+      return !!(user.email && ALLOWED_EMAILS.includes(user.email));
+    },
+    // Support one-time per-session userName/userCode (for audit log)
+    async jwt({ token, user, trigger, session }) {
+      if (user) {
+        token.name = user.name;
+        token.email = user.email;
       }
-      return false; // Block all others
-    }
+      if (
+        trigger === "update" &&
+        typeof session?.userName === "string" &&
+        typeof session?.userCode === "string"
+      ) {
+        token.userName = session.userName;
+        token.userCode = session.userCode;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      session.userName = typeof token.userName === "string" ? token.userName : null;
+      session.userCode = typeof token.userCode === "string" ? token.userCode : null;
+      return session;
+    },
   },
-});
+};
+
+export const { handlers, signIn, signOut, auth } = NextAuth(authOptions);

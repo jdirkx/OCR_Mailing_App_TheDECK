@@ -3,6 +3,47 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+type AuditLogInput = {
+  email: string | null | undefined;
+  userName: string | null | undefined;
+  userCode: string | null | undefined;
+  action: string;
+  meta?: any;
+};
+
+/**
+ * Writes an audit log entry to the database.
+ * Example usage:
+ *   await auditLog({
+ *     email: session.user.email,
+ *     userName: session.userName,
+ *     userCode: session.userCode,
+ *     action: "DELETE_RECORD",
+ *     meta: { recordId: 42 },
+ *   });
+ */
+export async function auditLog({
+  email,
+  userName,
+  userCode,
+  action,
+  meta,
+}: AuditLogInput) {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        email: email ?? "",
+        userName: userName ?? "",
+        userCode: userCode ?? "",
+        action,
+        meta,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to write to audit log:", error);
+  }
+}
+
 // Get client information by ID (includes secondary emails)
 export async function getClientById(clientId: number) {
   return await prisma.client.findUnique({

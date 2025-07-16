@@ -13,7 +13,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// PostgreSQL/Prisma
 model Client {
   id              Int       @id @default(autoincrement())
   name            String
@@ -23,7 +22,6 @@ model Client {
   mails           Mail[]
 }
 
-// PostgreSQL/Prisma
 model Mail {
   id          Int      @id @default(autoincrement())
   client      Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -35,4 +33,14 @@ model Mail {
   receivedAt  DateTime @default(now())
   notifiedAt  DateTime?
   collectedAt DateTime?
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  email     String
+  userCode  String
+  userName  String
+  action    String
+  meta      Json?
+  createdAt DateTime @default(now())
 }
