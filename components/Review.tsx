@@ -3,9 +3,55 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useMail } from "./context";
+import Select from "react-select";
+import { addMailForClient, getAllClients, getClientById } from "@/lib/actions";
+
+type Client = {
+  id: number;
+  name: string;
+  primaryEmail: string;
+  secondaryEmails: string[];
+};
 
 export default function ReviewPage() {
-  const { uploadedImages, clientGroups, setClientGroups } = useMail();
+  const [companies, setCompanies] = useState<Client[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const { uploadedImages, clientGroups, setClientGroups, setUploadedImages } = useMail();
+  const [modalImageIdx, setModalImageIdx] = useState<number | null>(null);
+
+// Fetch companies on mount
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const companiesData = await getAllClients();
+        setCompanies(companiesData);
+      } catch {
+        alert("Failed to load companies.");
+      }
+    };
+    fetchCompanies();
+  }, []);
+
+  // Fetch selected client details
+  useEffect(() => {
+    if (!selectedClientId) {
+      setSelectedClient(null);
+      return;
+    }
+    const fetchClient = async () => {
+      const client = await getClientById(selectedClientId);
+      setSelectedClient(client || null);
+    };
+    fetchClient();
+  }, [selectedClientId]);
+
+    // Prepare client options for the select dropdown
+    const clientOptions = companies.map(c => ({
+      value: c.id,
+      label: c.name,
+    }));
+
 
   // Group images by assignedClientId
   const groupedImages = uploadedImages.reduce((acc, image) => {
@@ -62,15 +108,20 @@ export default function ReviewPage() {
           {/* Image grid */}
           <div className="flex flex-wrap gap-4 mb-4">
             {images.map((img, idx) => (
-              <div key={idx} className="border rounded overflow-hidden">
-                <Image
-                  src={img.preview}
-                  alt={`Client ${clientId} Image ${idx + 1}`}
-                  width={150}
-                  height={150}
-                  className="object-cover w-36 h-36"
-                />
-              </div>
+            <div
+              key={idx}
+              className="border rounded overflow-hidden cursor-pointer"
+              onClick={() => setModalImageIdx(uploadedImages.indexOf(img))}
+              title="Click to enlarge"
+            >
+              <Image
+                src={img.preview}
+                alt={`Client ${clientId} Image ${idx + 1}`}
+                width={150}
+                height={150}
+                className="object-cover w-36 h-36"
+              />
+            </div>
             ))}
           </div>
 
@@ -88,6 +139,96 @@ export default function ReviewPage() {
           />
         </div>
       ))}
+
+      {modalImageIdx !== null && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+          onClick={() => setModalImageIdx(null)}
+        >
+          <div
+            className="relative flex flex-col items-center bg-white p-4 rounded"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Image preview */}
+            <Image
+              src={uploadedImages[modalImageIdx].preview}
+              alt={`Enlarged preview ${modalImageIdx + 1}`}
+              width={800}
+              height={600}
+              className="max-h-[80vh] max-w-[80vw] rounded shadow-lg object-contain"
+            />
+
+            {/* Client selection below the image */}
+            <div className="my-4 w-80">
+              <label className="block mb-1 font-medium text-gray-700">
+                Select Client
+              </label>
+              <Select
+                options={clientOptions}
+                onChange={(option) => {
+                  const clientId = option ? option.value : null;
+                  setSelectedClientId(clientId);
+
+                  // Update assignedClientId for this image
+                  const updatedImages = [...uploadedImages];
+                  if (modalImageIdx !== null) {
+                    updatedImages[modalImageIdx] = {
+                      ...updatedImages[modalImageIdx],
+                      assignedClientId: clientId,
+                    };
+                  }
+                  // Assuming you have setUploadedImages from context
+                  setUploadedImages(updatedImages);
+                }}
+                placeholder="Search or select a Client..."
+                className="text-black"
+                isSearchable
+                value={
+                  clientOptions.find(
+                    (opt) =>
+                      opt.value === uploadedImages[modalImageIdx].assignedClientId
+                  ) || null
+                }
+              />
+            </div>
+
+            {/* Navigation arrows */}
+            <div className="flex gap-4 mt-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setModalImageIdx((idx) => (idx !== null && idx > 0 ? idx - 1 : idx));
+                }}
+                disabled={modalImageIdx === 0}
+                className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                aria-label="Previous image"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setModalImageIdx((idx) =>
+                    idx !== null && idx < uploadedImages.length - 1 ? idx + 1 : idx
+                  );
+                }}
+                disabled={modalImageIdx === uploadedImages.length - 1}
+                className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                aria-label="Next image"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 }

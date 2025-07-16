@@ -44,6 +44,11 @@ async function main() {
         primaryEmail: "takahashi.misaki@email.jp",
         secondaryEmails: [],
       },
+      {
+        name: "Matthew Nguyen",
+        primaryEmail: "matthewnguyen1230@gmail.com",
+        secondaryEmails: [],
+      },
     ],
   });
 }
