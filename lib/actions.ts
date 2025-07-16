@@ -1,5 +1,6 @@
 "use server"
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client'; // updated
+import { JsonValue } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
 
@@ -8,7 +9,7 @@ type AuditLogInput = {
   userName: string | null | undefined;
   userCode: string | null | undefined;
   action: string;
-  meta?: any;
+  meta?: Prisma.JsonValue; // <-- FIXED
 };
 
 /**
@@ -36,7 +37,7 @@ export async function auditLog({
         userName: userName ?? "",
         userCode: userCode ?? "",
         action,
-        meta,
+        meta: meta as Prisma.InputJsonValue | undefined
       },
     });
   } catch (error) {

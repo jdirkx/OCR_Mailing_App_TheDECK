@@ -133,7 +133,6 @@ export default function MailIntakeStep2({
 
       // Only send selected images
       const selectedFiles = selectedIndices.map(idx => uploadedImages[idx]);
-      const imageUrls = await uploadImages(selectedFiles);
       setUploadProgress(50);
 
       // await addMailForClient(selectedClientId, { imageUrls, notes }); // TODO: mail upload to database not required

@@ -3,8 +3,16 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef } from "react";
 
+type AuditLogInfo = {
+  email: string;
+  userCode: string;
+  userName: string;
+  action: string;
+  meta?: unknown; // Use `unknown` if meta is arbitrary JSON, or a more specific type if known
+};
+
 // Replace with your actual audit log utility!
-const auditLog = async (info: any) => {
+const auditLog = async (info: AuditLogInfo) => {
   console.log("[AUDIT] Would log:", info);
 };
 
@@ -92,24 +100,24 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     // }
   }, [status, session, router]);
 
-  useEffect(() => {
-    if (
-      status === "authenticated"
-      && session
-      && !auditLoggedRef.current
-      && session.userName
-      && session.userCode
-    ) {
-      auditLog({
-        email: session.user?.email,
-        userName: session.userName,
-        userCode: session.userCode,
-        action: "ACCESS_PROTECTED_ROUTE",
-        meta: { path: window.location.pathname },
-      });
-      auditLoggedRef.current = true;
-    }
-  }, [status, session]);
+  // useEffect(() => {
+  //   if (
+  //     status === "authenticated"
+  //     && session
+  //     && !auditLoggedRef.current
+  //     && session.userName
+  //     && session.userCode
+  //   ) {
+  //     auditLog({
+  //       email: session.user?.email ?? "",
+  //       userName: session.userName,
+  //       userCode: session.userCode,
+  //       action: "ACCESS_PROTECTED_ROUTE",
+  //       meta: { path: window.location.pathname },
+  //     });
+  //     auditLoggedRef.current = true;
+  //   }
+  // }, [status, session]);
 
   if (status === "loading" || !session) return <div>Loading...</div>;
 
