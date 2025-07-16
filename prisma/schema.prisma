@@ -18,22 +18,23 @@ model Client {
 
 model Mail {
   id          Int       @id @default(autoincrement())
-  clientId    Int
+  receivedAt  DateTime  @default(now())
+  collectedAt DateTime?
   imageUrls   String[]
+  notes       String?
+  notifiedAt  DateTime?
   status      String?   @default("notified")
   urgency     Int?      @default(1)
-  notes       String?
-  receivedAt  DateTime  @default(now())
-  notifiedAt  DateTime?
-  collectedAt DateTime?
+  clientId    Int
   client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 
 model AuditLog {
   id        String   @id
-  timestamp DateTime @default(now())
-  name      String
-  staffCode String
+  email     String
+  userCode  String
+  userName  String
   action    String
-  details   Json?
+  meta      Json?
+  createdAt DateTime @default(now())
 }

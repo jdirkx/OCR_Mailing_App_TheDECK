@@ -3,9 +3,11 @@
 import React, { useRef, useState } from "react";
 import Image from "next/image";
 import { useMail } from "./context";
+import { useRouter } from "next/navigation";
 
 export default function ImageUploadStep() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
   const { uploadedImages, setUploadedImages, clearMail } = useMail();
   const [modalImageIdx, setModalImageIdx] = useState<number | null>(null);
 
@@ -45,7 +47,7 @@ export default function ImageUploadStep() {
       alert("Please upload at least one image before proceeding.");
       return;
     }
-    // you could navigate to next step or render next component
+    router.push("/review");
   }
 
   return (
