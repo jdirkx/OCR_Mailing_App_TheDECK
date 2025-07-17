@@ -4,6 +4,8 @@ import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import { getAllClients, getClientById } from "@/lib/actions";
+import { auditSendEmail } from "@/lib/actions";
+import { useSession } from "next-auth/react";
 
 type Client = {
   id: number;
@@ -26,6 +28,7 @@ export default function MailIntakeStep2({
   const [companies, setCompanies] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const { data: session } = useSession();
 
   // Track which images have been used/submitted
   const [used, setUsed] = useState<boolean[]>(uploadedImages.map(() => false));
@@ -149,6 +152,17 @@ export default function MailIntakeStep2({
         freshClient.primaryEmail,
         freshClient.secondaryEmails
       );
+
+      // After successful email send input auditlog
+      if (session?.user?.email && session?.userName) {
+        await auditSendEmail({
+          email: session.user.email,
+          userName: session.userName,
+          clientId: selectedClientId!,
+          imageCount: selectedIndices.length,
+          notes,
+        });
+      }
 
       alert("✅ Mail successfully added and email sent!");
 

@@ -17,13 +17,13 @@ export const authOptions: NextAuthConfig = {
     }),
   ],
   session: { strategy: "jwt" },
-  secret: process.env.AUTH_SECRET, // recommended for production
+  secret: process.env.AUTH_SECRET,
   callbacks: {
     // Only allow sign-in for authorized emails
     async signIn({ user }) {
       return !!(user.email && ALLOWED_EMAILS.includes(user.email));
     },
-    // Support one-time per-session userName/userCode (for audit log)
+    // Support one-time per-session userName (for audit log)
     async jwt({ token, user, trigger, session }) {
       if (user) {
         token.name = user.name;
@@ -31,17 +31,14 @@ export const authOptions: NextAuthConfig = {
       }
       if (
         trigger === "update" &&
-        typeof session?.userName === "string" &&
-        typeof session?.userCode === "string"
+        typeof session?.userName === "string"
       ) {
         token.userName = session.userName;
-        token.userCode = session.userCode;
       }
       return token;
     },
     async session({ session, token }) {
       session.userName = typeof token.userName === "string" ? token.userName : null;
-      session.userCode = typeof token.userCode === "string" ? token.userCode : null;
       return session;
     },
   },

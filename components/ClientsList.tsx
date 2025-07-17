@@ -214,7 +214,7 @@ export default function ClientPage() {
       <div className="bg-white border rounded shadow-sm">
         {/* Desktop Table */}
         <table className="w-full table-auto hidden sm:table">
-          <thead className="bg-black">
+          <thead className="bg-black text-white">
             <tr>
               <th className="text-left px-4 py-2">Name</th>
               <th className="text-left px-4 py-2">Primary Email</th>

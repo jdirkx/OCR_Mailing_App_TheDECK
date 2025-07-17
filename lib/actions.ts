@@ -1,12 +1,11 @@
 "use server"
-import { PrismaClient, Prisma } from '@prisma/client'; // updated
+import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 type AuditLogInput = {
   email: string | null | undefined;
   userName: string | null | undefined;
-  userCode: string | null | undefined;
   action: string;
   meta?: Prisma.JsonValue; // <-- FIXED
 };
@@ -17,7 +16,6 @@ type AuditLogInput = {
  *   await auditLog({
  *     email: session.user.email,
  *     userName: session.userName,
- *     userCode: session.userCode,
  *     action: "DELETE_RECORD",
  *     meta: { recordId: 42 },
  *   });
@@ -25,16 +23,15 @@ type AuditLogInput = {
 export async function auditLog({
   email,
   userName,
-  userCode,
   action,
   meta,
 }: AuditLogInput) {
+  console.log("auditLog called with", { email, userName, action, meta });
   try {
     await prisma.auditLog.create({
       data: {
         email: email ?? "",
         userName: userName ?? "",
-        userCode: userCode ?? "",
         action,
         meta: meta as Prisma.InputJsonValue | undefined
       },
@@ -42,6 +39,32 @@ export async function auditLog({
   } catch (error) {
     console.error("Failed to write to audit log:", error);
   }
+}
+
+export async function auditSendEmail({
+  email,
+  userName,
+  clientId,
+  imageCount,
+  notes,
+}: {
+  email: string;
+  userName: string;
+  clientId: number;
+  imageCount: number;
+  notes?: string;
+}) {
+  await auditLog({
+    email,
+    userName,
+    action: "SEND_EMAIL",
+    meta: {
+      clientId,
+      imageCount,
+      notes,
+      timestamp: new Date().toISOString(),
+    },
+  });
 }
 
 // Get client information by ID (includes secondary emails)
@@ -73,13 +96,27 @@ export async function editClient(
   id: number,
   name: string,
   primaryEmail: string,
-  secondaryEmails: string[] = []
+  secondaryEmails: string[] = [],
+  auditUser?: { email: string | null | undefined; userName: string | null | undefined }
 ) {
-  return await prisma.client.update({
+  const client = await prisma.client.update({
     where: { id },
     data: { name, primaryEmail, secondaryEmails },
   });
+
+  // Audit log for editing client
+  if (auditUser) {
+    await auditLog({
+      email: auditUser.email,
+      userName: auditUser.userName,
+      action: "EDIT_CLIENT",
+      meta: { clientId: id, newName: name, newPrimaryEmail: primaryEmail, newSecondaryEmails: secondaryEmails }
+    });
+  }
+
+  return client;
 }
+
 
 // Delete a client by ID
 export async function deleteClient(id: number) {
