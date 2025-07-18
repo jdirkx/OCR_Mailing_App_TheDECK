@@ -2,7 +2,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import TransitionLoader from "@/components/TransitionLoader"; // adjust the path as needed
+import TransitionLoader from "@/components/TransitionLoader";
 
 function IdentifyUser() {
   const { update, data: session } = useSession();
@@ -23,10 +23,7 @@ function IdentifyUser() {
     }
 
     try {
-      // Update the session user object with userName
-      await update({ userName: name });
-
-      // Use latest email from session if present
+      // 1. Audit log the identification event first
       await fetch("/api/audit-log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -38,11 +35,15 @@ function IdentifyUser() {
         }),
       });
 
+      // 2. Update the session with userName
       await update({ userName: name });
-      await new Promise(r => setTimeout(r, 200));
-      router.replace("/mail-upload");
 
-    } catch {
+      // 3. Wait (short pause for session propagation)
+      await new Promise(r => setTimeout(r, 300));
+
+      // 4. Route to mail-upload with a loader fallback
+      router.replace("/mail-upload");
+    } catch (error) {
       setError("Something went wrong. Please try again.");
       setSubmitting(false);
     }
@@ -64,7 +65,6 @@ function IdentifyUser() {
         onChange={e => setName(e.target.value)}
         required
       />
-      {/* Optionally show active account's email */}
       {session?.user?.email && (
         <div className="mb-4 text-sm text-gray-500">
           Signing in as <b>{session.user.email}</b>
@@ -88,23 +88,32 @@ function IdentifyUser() {
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [internalError, setInternalError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === "unauthenticated" && session === null) {
-      router.replace("/");
+    try {
+      if (status === "unauthenticated" && session === null) {
+        router.replace("/");
+      }
+    } catch (err: any) {
+      setInternalError("Navigation error: " + (err?.message || String(err)));
     }
   }, [status, session, router]);
-
 
   if (status === "loading" || !session) {
     return <TransitionLoader />;
   }
 
+  // Error catch: Unexpectedly no session
+  if (internalError) {
+    return <div className="text-red-600">{internalError}</div>;
+  }
 
   // If userName is missing, require identification and audit it
   if (!session.userName) {
     return <IdentifyUser />;
   }
 
-  return <>{children}</>;
+  // Always render children as fallback
+  return <>{children || <div>Loading content...</div>}</>;
 }
