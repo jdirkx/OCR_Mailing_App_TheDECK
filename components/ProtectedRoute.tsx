@@ -32,13 +32,13 @@ function IdentifyUser() {
         body: JSON.stringify({
           email: session?.user?.email ?? null,
           userName: name,
-          action: "IDENTIFY_USER",
+          action: "LOGIN",
           meta: { timestamp: new Date().toISOString() }
         }),
       });
 
       router.replace("/mail-upload");
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.");
       setSubmitting(false);
     }

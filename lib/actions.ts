@@ -7,7 +7,7 @@ type AuditLogInput = {
   email: string | null | undefined;
   userName: string | null | undefined;
   action: string;
-  meta?: Prisma.JsonValue; // <-- FIXED
+  meta?: Prisma.JsonValue;
 };
 
 /**
@@ -39,6 +39,14 @@ export async function auditLog({
   } catch (error) {
     console.error("Failed to write to audit log:", error);
   }
+}
+
+// Fetch all audit logs from database
+export async function getAuditLogs(limit = 100) {
+  return prisma.auditLog.findMany({
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
 }
 
 export async function auditSendEmail({
@@ -79,28 +87,7 @@ export async function getClientById(clientId: number) {
 export async function getAllClients() {
   return await prisma.client.findMany({ orderBy: { id: "asc" } });
 }
-export async function updateClientSecondaryEmails(
-  clientId: number,
-  newSecondaryEmails: string[],
-  auditUser?: { email: string | null | undefined; userName: string | null | undefined }
-) {
-  const updatedClient = await prisma.client.update({
-    where: { id: clientId },
-    data: { secondaryEmails: newSecondaryEmails },
-  });
 
-  if (auditUser) {
-    await auditLog({
-      email: auditUser.email,
-      userName: auditUser.userName,
-      action: "CHANGE_SECONDARY_EMAILS",
-      meta: { clientId, newSecondaryEmails },
-    });
-  }
-
-  return updatedClient;
-}
-  
 // Add a client with primary and secondary emails
 export async function addClient(
   name: string,

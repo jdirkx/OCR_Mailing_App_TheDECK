@@ -13,8 +13,7 @@ function LoginOrRedirect() {
     // Only redirect if all user fields are present (prevents redirect loop)
     if (
       status === "authenticated" &&
-      session?.userName &&
-      session?.userCode
+      session?.userName
     ) {
       console.log("[Login Page] Redirecting to /mail-upload");
       router.replace("/mail-upload");
