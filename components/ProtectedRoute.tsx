@@ -7,7 +7,7 @@ import TransitionLoader from "@/components/TransitionLoader";
 function IdentifyUser() {
   const { update, data: session } = useSession();
   const [name, setName] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(""); // <- This is now actually used
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
 
@@ -23,7 +23,6 @@ function IdentifyUser() {
     }
 
     try {
-      // 1. Audit log the identification event first
       await fetch("/api/audit-log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -35,25 +34,18 @@ function IdentifyUser() {
         }),
       });
 
-      // 2. Update the session with userName
       await update({ userName: name });
-
-      // 3. Wait (short pause for session propagation)
       await new Promise(r => setTimeout(r, 300));
-
-      // 4. Route to mail-upload with a loader fallback
       router.replace("/mail-upload");
-    } catch (error) {
-      setError("Something went wrong. Please try again.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      setError(`Something went wrong: ${message}`);
       setSubmitting(false);
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="max-w-sm mx-auto mt-10 p-6 bg-white rounded shadow text-black"
-    >
+    <form onSubmit={handleSubmit} className="max-w-sm mx-auto mt-10 p-6 bg-white rounded shadow text-black">
       <h2 className="text-xl mb-4 font-bold text-center">Identify Yourself</h2>
       <label className="block mb-2 font-medium">Name</label>
       <input
@@ -95,8 +87,9 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       if (status === "unauthenticated" && session === null) {
         router.replace("/");
       }
-    } catch (err: any) {
-      setInternalError("Navigation error: " + (err?.message || String(err)));
+    } catch (err: unknown) { // <--- don't use `any`!
+      const message = err instanceof Error ? err.message : String(err);
+      setInternalError("Navigation error: " + message);
     }
   }, [status, session, router]);
 
@@ -104,16 +97,13 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     return <TransitionLoader />;
   }
 
-  // Error catch: Unexpectedly no session
   if (internalError) {
     return <div className="text-red-600">{internalError}</div>;
   }
 
-  // If userName is missing, require identification and audit it
   if (!session.userName) {
     return <IdentifyUser />;
   }
 
-  // Always render children as fallback
   return <>{children || <div>Loading content...</div>}</>;
 }
