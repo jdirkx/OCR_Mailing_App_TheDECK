@@ -2,7 +2,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import TransitionLoader from "@/components/TransitionLoader"; // make sure the path is correct
+import Loading from "@/app/loading"; // make sure the path is correct
 
 function IdentifyUser() {
   const { update, data: session } = useSession();
@@ -50,7 +50,7 @@ function IdentifyUser() {
     }
   };
 
-  if (loading) return <TransitionLoader message="Almost ready..." />;
+  if (loading) return <Loading message="Almost ready..." />;
 
   return (
     <form
@@ -105,7 +105,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   // Loader while fetching session or waiting for update
   if (status === "loading" || !session) {
-    return <TransitionLoader message="Loading your workspace..." />;
+    return <Loading message="Loading your workspace..." />;
   }
 
   // Identification-required step
@@ -114,5 +114,5 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   }
 
   // Render the protected children (main content)
-  return <>{children || <TransitionLoader message="Loading page..." />}</>;
+  return <>{children || <Loading message="Loading page..." />}</>;
 }

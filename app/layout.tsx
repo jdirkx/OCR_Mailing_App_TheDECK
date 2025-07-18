@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local"
 import "./globals.css";
-import TransitionLoader from "@/components/TransitionLoader";
 
 const workSans = localFont({
   src: [
@@ -59,7 +58,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={workSans.variable} suppressHydrationWarning>
-        <TransitionLoader />
         {children}
       </body>
     </html>
