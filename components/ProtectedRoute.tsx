@@ -91,7 +91,7 @@ function IdentifyUser() {
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [internalError, setInternalError] = useState<string | null>(null);
+  const [internalError] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated" && session === null) {
