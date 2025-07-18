@@ -79,16 +79,50 @@ export async function getClientById(clientId: number) {
 export async function getAllClients() {
   return await prisma.client.findMany({ orderBy: { id: "asc" } });
 }
+export async function updateClientSecondaryEmails(
+  clientId: number,
+  newSecondaryEmails: string[],
+  auditUser?: { email: string | null | undefined; userName: string | null | undefined }
+) {
+  const updatedClient = await prisma.client.update({
+    where: { id: clientId },
+    data: { secondaryEmails: newSecondaryEmails },
+  });
 
+  if (auditUser) {
+    await auditLog({
+      email: auditUser.email,
+      userName: auditUser.userName,
+      action: "CHANGE_SECONDARY_EMAILS",
+      meta: { clientId, newSecondaryEmails },
+    });
+  }
+
+  return updatedClient;
+}
+  
 // Add a client with primary and secondary emails
 export async function addClient(
   name: string,
   primaryEmail: string,
-  secondaryEmails: string[] = []
+  secondaryEmails: string[] = [],
+  auditUser?: { email: string | null | undefined; userName: string | null | undefined }
 ) {
-  return await prisma.client.create({
+  const client = await prisma.client.create({
     data: { name, primaryEmail, secondaryEmails },
   });
+
+  // Audit log for adding client
+  if (auditUser) {
+    await auditLog({
+      email: auditUser.email,
+      userName: auditUser.userName,
+      action: "ADD_CLIENT",
+      meta: { clientId: client.id, name, primaryEmail, secondaryEmails }
+    });
+  }
+
+  return client;
 }
 
 // Edit a client, including emails
@@ -119,8 +153,23 @@ export async function editClient(
 
 
 // Delete a client by ID
-export async function deleteClient(id: number) {
-  return await prisma.client.delete({ where: { id } });
+export async function deleteClient(
+  id: number,
+  auditUser?: { email: string | null | undefined; userName: string | null | undefined }
+) {
+  const client = await prisma.client.delete({ where: { id } });
+
+  // Audit log for deleting client
+  if (auditUser) {
+    await auditLog({
+      email: auditUser.email,
+      userName: auditUser.userName,
+      action: "DELETE_CLIENT",
+      meta: { clientId: id, deletedName: client.name, deletedPrimaryEmail: client.primaryEmail }
+    });
+  }
+
+  return client;
 }
 
 // Mail Intake: Add mail for a client
@@ -154,11 +203,26 @@ export async function getMailsByClientId(clientId: number) {
 }
 
 // Update mail status
-export async function updateMailStatus(mailId: number, status: string) {
-  return await prisma.mail.update({
+export async function updateMailStatus(
+  mailId: number,
+  status: string,
+  auditUser?: { email: string | null | undefined; userName: string | null | undefined }
+) {
+  const mail = await prisma.mail.update({
     where: { id: mailId },
     data: { status },
   });
+
+  if (auditUser) {
+    await auditLog({
+      email: auditUser.email,
+      userName: auditUser.userName,
+      action: "UPDATE_MAIL_STATUS",
+      meta: { mailId, newStatus: status }
+    });
+  }
+
+  return mail;
 }
 
 // Delete a mail by ID

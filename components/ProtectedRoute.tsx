@@ -1,15 +1,14 @@
 "use client";
-import { auditLog } from "@/lib/actions";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
-// Inline IdentifyUser form for demo/testing
 function IdentifyUser() {
-  const { update } = useSession();
+  const { update, data: session } = useSession();
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,23 +22,27 @@ function IdentifyUser() {
     }
 
     try {
+      // Update the session user object with userName
       await update({ userName: name });
-      
-      // Audit log: user identified themselves
-      await auditLog({
-        email: null, // user may not be fully logged in, or grab from session/user if available
-        userName: name,
-        action: "IDENTIFY_USER",
-        meta: { timestamp: new Date().toISOString() },
+
+      // Use latest email from session if present
+      await fetch("/api/audit-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: session?.user?.email ?? null,
+          userName: name,
+          action: "IDENTIFY_USER",
+          meta: { timestamp: new Date().toISOString() }
+        }),
       });
 
-      window.location.reload();
-    } catch {
+      router.replace("/mail-upload");
+    } catch (err) {
       setError("Something went wrong. Please try again.");
       setSubmitting(false);
     }
   };
-
 
   return (
     <form
@@ -57,6 +60,12 @@ function IdentifyUser() {
         onChange={e => setName(e.target.value)}
         required
       />
+      {/* Optionally show active account's email */}
+      {session?.user?.email && (
+        <div className="mb-4 text-sm text-gray-500">
+          Signing in as <b>{session.user.email}</b>
+        </div>
+      )}
       {error && <div className="mb-4 text-red-600">{error}</div>}
       <button
         type="submit"
@@ -78,23 +87,18 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (status === "unauthenticated" && session === null) {
-      // Only redirect when session is truly unauthenticated, not just "flickering"
-      console.log("[ProtectedRoute] Unauthenticated (confirmed), redirecting to /");
       router.replace("/");
     }
-    // else if (status === "loading") {
-    //   Do nothing, don't redirect
-    // }
   }, [status, session, router]);
 
-  if (status === "loading" || !session) return <div>Loading...</div>;
+  if (status === "loading" || !session) {
+    return <div>Loading...</div>;
+  }
 
-  // If fields are missing, prompt for identify
+  // If userName is missing, require identification and audit it
   if (!session.userName) {
-    console.log("[ProtectedRoute] Missing userName, showing IdentifyUser");
     return <IdentifyUser />;
   }
 
-  // Show children if authenticated & identified
   return <>{children}</>;
 }

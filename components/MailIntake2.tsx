@@ -145,7 +145,7 @@ export default function MailIntakeStep2({
       const freshClient = await getClientById(selectedClientId);
       if (!freshClient) throw new Error("Client not found.");
 
-      setUploadProgress(100);
+      setUploadProgress(90);
 
       await sendEmailWithAttachments(
         selectedFiles,
@@ -163,7 +163,7 @@ export default function MailIntakeStep2({
           notes,
         });
       }
-
+      setUploadProgress(100);
       alert("✅ Mail successfully added and email sent!");
 
       // Mark submitted images as used
