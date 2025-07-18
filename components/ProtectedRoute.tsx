@@ -38,7 +38,7 @@ function IdentifyUser() {
       });
 
       router.replace("/mail-upload");
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.");
       setSubmitting(false);
     }

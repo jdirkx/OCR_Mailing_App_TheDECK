@@ -41,6 +41,14 @@ export async function auditLog({
   }
 }
 
+// Fetch all audit logs from database
+export async function getAuditLogs(limit = 100) {
+  return prisma.auditLog.findMany({
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+}
+
 export async function auditSendEmail({
   email,
   userName,
@@ -100,7 +108,7 @@ export async function updateClientSecondaryEmails(
 
   return updatedClient;
 }
-  
+
 // Add a client with primary and secondary emails
 export async function addClient(
   name: string,

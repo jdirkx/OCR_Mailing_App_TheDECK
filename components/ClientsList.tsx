@@ -146,21 +146,6 @@ export default function ClientPage() {
     setter(emails.filter((_, i) => i !== idx));
   }
 
-  // Optionally: advanced handler for secondary emails only
-  async function handleSecondaryEmailsSave(clientId: number, newSecondaryEmails: string[]) {
-    if (!isReady) return;
-    await updateClientSecondaryEmailsAction(
-      clientId,
-      newSecondaryEmails,
-      currentUser
-    );
-    setClients(clients.map(c =>
-      c.id === clientId
-        ? { ...c, secondaryEmails: newSecondaryEmails }
-        : c
-    ));
-  }
-
   // Rendering
   if (status === "loading") return <div>Loading session...</div>;
   if (!isReady)
