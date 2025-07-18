@@ -1,10 +1,9 @@
-// app/api/cleanup-audit-logs/route.ts
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000); // 14 days ago
   const result = await prisma.auditLog.deleteMany({
     where: {
