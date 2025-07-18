@@ -34,7 +34,7 @@ function IdentifyUser() {
       });
 
       window.location.reload();
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.");
       setSubmitting(false);
     }
