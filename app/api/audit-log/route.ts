@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
-  const { email, userCode, userName, action, meta } = await req.json();
+  const { email, userName, action, meta } = await req.json();
   await prisma.auditLog.create({
     data: { email, userName, action, meta },
   });
