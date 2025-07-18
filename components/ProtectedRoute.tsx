@@ -2,6 +2,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import TransitionLoader from "@/components/TransitionLoader"; // adjust the path as needed
 
 function IdentifyUser() {
   const { update, data: session } = useSession();
@@ -37,7 +38,10 @@ function IdentifyUser() {
         }),
       });
 
+      await update({ userName: name });
+      await new Promise(r => setTimeout(r, 200));
       router.replace("/mail-upload");
+
     } catch {
       setError("Something went wrong. Please try again.");
       setSubmitting(false);
@@ -91,9 +95,11 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     }
   }, [status, session, router]);
 
+
   if (status === "loading" || !session) {
-    return <div>Loading...</div>;
+    return <TransitionLoader />;
   }
+
 
   // If userName is missing, require identification and audit it
   if (!session.userName) {
