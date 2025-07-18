@@ -2,27 +2,24 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import TransitionLoader from "@/components/TransitionLoader";
+import TransitionLoader from "@/components/TransitionLoader"; // make sure the path is correct
 
 function IdentifyUser() {
   const { update, data: session } = useSession();
   const [name, setName] = useState("");
-  const [error, setError] = useState(""); // <- This is now actually used
+  const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false); // for spinner after submit
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSubmitting(true);
-
-    if (!name.trim()) {
-      setError("Name is required.");
-      setSubmitting(false);
-      return;
-    }
+    setLoading(true);
 
     try {
+      // Audit log before updating session/user
       await fetch("/api/audit-log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -35,17 +32,31 @@ function IdentifyUser() {
       });
 
       await update({ userName: name });
-      await new Promise(r => setTimeout(r, 300));
+
+      // Wait for session propagation (Vercel/serverless may lag otherwise)
+      await new Promise(r => setTimeout(r, 700));
+
       router.replace("/mail-upload");
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      setError(`Something went wrong: ${message}`);
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "string"
+          ? err
+          : "Unknown error";
+      setError("Something went wrong: " + message);
       setSubmitting(false);
+      setLoading(false);
     }
   };
 
+  if (loading) return <TransitionLoader message="Almost ready..." />;
+
   return (
-    <form onSubmit={handleSubmit} className="max-w-sm mx-auto mt-10 p-6 bg-white rounded shadow text-black">
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-sm mx-auto mt-10 p-6 bg-white rounded shadow text-black"
+    >
       <h2 className="text-xl mb-4 font-bold text-center">Identify Yourself</h2>
       <label className="block mb-2 font-medium">Name</label>
       <input
@@ -83,27 +94,25 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   const [internalError, setInternalError] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      if (status === "unauthenticated" && session === null) {
-        router.replace("/");
-      }
-    } catch (err: unknown) { // <--- don't use `any`!
-      const message = err instanceof Error ? err.message : String(err);
-      setInternalError("Navigation error: " + message);
+    if (status === "unauthenticated" && session === null) {
+      router.replace("/");
     }
   }, [status, session, router]);
-
-  if (status === "loading" || !session) {
-    return <TransitionLoader />;
-  }
 
   if (internalError) {
     return <div className="text-red-600">{internalError}</div>;
   }
 
+  // Loader while fetching session or waiting for update
+  if (status === "loading" || !session) {
+    return <TransitionLoader message="Loading your workspace..." />;
+  }
+
+  // Identification-required step
   if (!session.userName) {
     return <IdentifyUser />;
   }
 
-  return <>{children || <div>Loading content...</div>}</>;
+  // Render the protected children (main content)
+  return <>{children || <TransitionLoader message="Loading page..." />}</>;
 }
