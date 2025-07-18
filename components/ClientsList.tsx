@@ -10,7 +10,7 @@ import {
 } from "@/lib/actions";
 
 type Client = {
-  id: number; // <<<<<<<< INT!
+  id: number;
   name: string;
   primaryEmail: string;
   secondaryEmails: string[];
@@ -39,7 +39,7 @@ export default function ClientPage() {
   // Get actual current user info for audit logging
   const currentUser = {
     email: session?.user?.email ?? "",
-    userName: (session as any)?.userName ?? session?.user?.name ?? "",
+    userName: session?.userName ?? session?.user?.name ?? "",
   };
 
   // Block mutation until login fully loaded
