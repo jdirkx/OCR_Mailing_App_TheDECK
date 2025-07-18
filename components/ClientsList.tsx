@@ -7,10 +7,15 @@ import {
   addClient as addClientAction,
   editClient as editClientAction,
   deleteClient as deleteClientAction,
-  updateClientSecondaryEmails as updateClientSecondaryEmailsAction,
 } from "@/lib/actions";
 
-type Client = { id: number; name: string; primaryEmail: string; secondaryEmails: string[] };
+type Client = {
+  id: number; // <<<<<<<< INT!
+  name: string;
+  primaryEmail: string;
+  secondaryEmails: string[];
+  createdAt?: Date;
+};
 type SetEmails = React.Dispatch<React.SetStateAction<string[]>>;
 
 export default function ClientPage() {
@@ -229,8 +234,9 @@ export default function ClientPage() {
       {/* Loading indicator */}
       {loading && <div className="text-center py-4">Loading...</div>}
 
-      {/* Client List (for brevity, just desktop; include your mobile version as needed!) */}
+      {/* Client List (desktop and mobile) */}
       <div className="bg-white border rounded shadow-sm">
+        {/* Desktop Table */}
         <table className="w-full table-auto hidden sm:table">
           <thead className="bg-black text-white">
             <tr>
@@ -347,7 +353,129 @@ export default function ClientPage() {
             ))}
           </tbody>
         </table>
-        {/* You can include the mobile card version here as in your original if needed */}
+        {/* Mobile Card List */}
+        <div className="flex flex-col gap-4 p-2 sm:hidden">
+          {filteredClients.length === 0 ? (
+            <div className="text-center text-gray-400">No clients found.</div>
+          ) : (
+            filteredClients.map(client => (
+              <div key={client.id} className="border rounded p-4 bg-white shadow text-black">
+                {editingId === client.id ? (
+                  <>
+                    {/* Editable fields */}
+                    <div className="mb-2">
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={e => setEditName(e.target.value)}
+                        className="w-full border rounded px-2 py-1"
+                        placeholder="Client Name"
+                      />
+                    </div>
+                    <div className="mb-2">
+                      <input
+                        type="email"
+                        value={editPrimaryEmail}
+                        onChange={e => setEditPrimaryEmail(e.target.value)}
+                        className="w-full border rounded px-2 py-1"
+                        placeholder="Primary Email"
+                      />
+                    </div>
+                    <div className="mb-2">
+                      <span className="font-semibold">Secondary Emails:</span>
+                      {editSecondaryEmails.map((email, idx) => (
+                        <div className="flex items-center mb-1" key={idx}>
+                          <input
+                            type="email"
+                            placeholder={`Secondary Email #${idx + 1}`}
+                            value={email}
+                            onChange={e =>
+                              handleSecondaryEmailChange(setEditSecondaryEmails, idx, e.target.value, editSecondaryEmails)
+                            }
+                            className="border rounded px-2 py-1 flex-1"
+                          />
+                          <button
+                            type="button"
+                            className="ml-2 px-2 py-1 bg-red-500 text-white rounded"
+                            onClick={() => removeSecondaryEmailField(setEditSecondaryEmails, idx, editSecondaryEmails)}
+                            disabled={editSecondaryEmails.length === 1}
+                            title="Remove"
+                          >−</button>
+                          {idx === editSecondaryEmails.length - 1 && (
+                            <button
+                              type="button"
+                              className="ml-2 px-2 py-1 bg-green-600 text-white rounded"
+                              onClick={() => addSecondaryEmailField(setEditSecondaryEmails, editSecondaryEmails)}
+                              title="Add another secondary email"
+                            >＋</button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={() => saveEdit(client.id)}
+                        className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
+                        disabled={!isReady}
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500 transition"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => deleteClient(client.id)}
+                        className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
+                        disabled={!isReady}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-2">
+                      <span className="font-semibold">Name: </span>{client.name}
+                    </div>
+                    <div className="mb-2">
+                      <span className="font-semibold">Primary Email: </span>{client.primaryEmail}
+                    </div>
+                    <div className="mb-2">
+                      <span className="font-semibold">Secondary Emails: </span>
+                      {client.secondaryEmails && client.secondaryEmails.length > 0 ? (
+                        <ul>
+                          {client.secondaryEmails.map((email, i) => (
+                            <li key={i} className="text-xs">{email}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="text-gray-400 text-xs">—</span>
+                      )}
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={() => startEdit(client)}
+                        className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteClient(client.id)}
+                        className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
+                        disabled={!isReady}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

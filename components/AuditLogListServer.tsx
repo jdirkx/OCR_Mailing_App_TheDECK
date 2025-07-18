@@ -1,7 +1,8 @@
 import { getAuditLogs } from "@/lib/actions";
+import type { AuditLog } from "@/types/audit-log";
 
 export default async function AuditLogListServer() {
-  const logs = await getAuditLogs(100);
+  const logs: AuditLog[] = await getAuditLogs(100);
 
   return (
     <table className="min-w-full bg-white border text-sm text-left">
@@ -15,7 +16,7 @@ export default async function AuditLogListServer() {
         </tr>
       </thead>
       <tbody>
-        {logs.map((log: any) => (
+        {logs.map((log: AuditLog) => (
           <tr key={log.id} className="border-b hover:bg-gray-50">
             <td className="py-1 px-2 border">{log.createdAt ? new Date(log.createdAt).toLocaleString() : ""}</td>
             <td className="py-1 px-2 border">{log.userName}</td>

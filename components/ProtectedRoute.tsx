@@ -32,7 +32,7 @@ function IdentifyUser() {
         body: JSON.stringify({
           email: session?.user?.email ?? null,
           userName: name,
-          action: "IDENTIFY_USER",
+          action: "LOGIN",
           meta: { timestamp: new Date().toISOString() }
         }),
       });
