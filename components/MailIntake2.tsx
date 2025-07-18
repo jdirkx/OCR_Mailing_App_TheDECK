@@ -3,7 +3,9 @@
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
-import { addMailForClient, getAllClients, getClientById } from "@/lib/actions";
+import { getAllClients, getClientById } from "@/lib/actions";
+import { auditSendEmail } from "@/lib/actions";
+import { useSession } from "next-auth/react";
 
 type Client = {
   id: number;
@@ -26,6 +28,7 @@ export default function MailIntakeStep2({
   const [companies, setCompanies] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const { data: session } = useSession();
 
   // Track which images have been used/submitted
   const [used, setUsed] = useState<boolean[]>(uploadedImages.map(() => false));
@@ -33,7 +36,6 @@ export default function MailIntakeStep2({
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   // Overlay/modal state
   const [overlayOpen, setOverlayOpen] = useState(false);
-  const [modalImage, setModalImage] = useState<string | null>(null);
 
   // Notes for the mail
   const [notes, setNotes] = useState("");
@@ -134,17 +136,16 @@ export default function MailIntakeStep2({
 
       // Only send selected images
       const selectedFiles = selectedIndices.map(idx => uploadedImages[idx]);
-      const imageUrls = await uploadImages(selectedFiles);
       setUploadProgress(50);
 
-      await addMailForClient(selectedClientId, { imageUrls, notes });
+      // await addMailForClient(selectedClientId, { imageUrls, notes }); // TODO: mail upload to database not required
       setUploadProgress(75);
 
       // Fetch the latest client data for accurate CCs
       const freshClient = await getClientById(selectedClientId);
       if (!freshClient) throw new Error("Client not found.");
 
-      setUploadProgress(100);
+      setUploadProgress(90);
 
       await sendEmailWithAttachments(
         selectedFiles,
@@ -152,6 +153,17 @@ export default function MailIntakeStep2({
         freshClient.secondaryEmails
       );
 
+      // After successful email send input auditlog
+      if (session?.user?.email && session?.userName) {
+        await auditSendEmail({
+          email: session.user.email,
+          userName: session.userName,
+          clientId: selectedClientId!,
+          imageCount: selectedIndices.length,
+          notes,
+        });
+      }
+      setUploadProgress(100);
       alert("✅ Mail successfully added and email sent!");
 
       // Mark submitted images as used
@@ -161,18 +173,16 @@ export default function MailIntakeStep2({
       setSelectedClientId(null);
       setSelectedClient(null);
       setOverlayOpen(false);
-    } catch (error: any) {
-      alert(`❌Failed to process mail: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        alert(`❌Failed to process mail: ${error.message}`);
+      } else {
+        alert("❌Failed to process mail: Unknown error");
+      }
     } finally {
       setIsSubmitting(false);
       setUploadProgress(0);
     }
-  }
-
-  // Simulate image upload (replace with real upload logic as needed)
-  async function uploadImages(files: File[]): Promise<string[]> {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return files.map(file => URL.createObjectURL(file));
   }
 
   // Send email with attachments

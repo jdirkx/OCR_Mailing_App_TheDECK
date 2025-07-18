@@ -16,16 +16,19 @@ export default function ImageUploadStep() {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
 
-      const processedImages = filesArray.map(file => ({
-        file,
-        preview: URL.createObjectURL(file),
-        ocrText: "",
+      const uploadedImages = filesArray.map(file => ({
+        id: crypto.randomUUID(),
+        text: "",
+        original: {
+          file,
+          preview: URL.createObjectURL(file),
+        },
+        processed: undefined,
         assignedClientId: null,
-        sent: false,
-        notes: "",
+        sent: false
       }));
 
-      setUploadedImages(prev => [...prev, ...processedImages]);
+      setUploadedImages(prev => [...prev, ...uploadedImages]);
     }
   }
 
@@ -102,7 +105,7 @@ export default function ImageUploadStep() {
                 title="Click to enlarge"
               >
                 <Image
-                  src={img.preview}
+                  src={img.original.preview}
                   alt={`Preview ${idx + 1}`}
                   width={120}
                   height={120}
@@ -144,7 +147,7 @@ export default function ImageUploadStep() {
         >
           <div className="relative flex flex-col items-center">
             <Image
-              src={uploadedImages[modalImageIdx].preview}
+              src={uploadedImages[modalImageIdx].original.preview}
               alt={`Enlarged preview ${modalImageIdx + 1}`}
               width={800}
               height={600}

@@ -2,10 +2,17 @@
 
 import React, { createContext, useContext, useState } from "react";
 
-export type ProcessedImage = {
-  file: File;
-  preview: string;
-  ocrText: string;
+export type UploadedImage = {
+  id: string;
+  text: string;
+  original:{
+    preview: string;
+    file: File
+  };
+  processed?:{
+    preview?: string;
+    ocrText?: string;
+  };
   assignedClientId: number | null;
   sent: boolean;
 };
@@ -17,8 +24,8 @@ export type ClientGroup = {
 };
 
 type MailContextType = {
-  uploadedImages: ProcessedImage[];
-  setUploadedImages: React.Dispatch<React.SetStateAction<ProcessedImage[]>>;
+  uploadedImages: UploadedImage[];
+  setUploadedImages: React.Dispatch<React.SetStateAction<UploadedImage[]>>;
   clientGroups: ClientGroup[];
   setClientGroups: React.Dispatch<React.SetStateAction<ClientGroup[]>>;
   clearMail: () => void;
@@ -27,7 +34,7 @@ type MailContextType = {
 const MailContext = createContext<MailContextType | undefined>(undefined);
 
 export const MailProvider = ({ children }: { children: React.ReactNode }) => {
-  const [uploadedImages, setUploadedImages] = useState<ProcessedImage[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [clientGroups, setClientGroups] = useState<ClientGroup[]>([]);
 
   const clearMail = () => {
@@ -50,3 +57,7 @@ export function useMail() {
   }
   return context;
 }
+
+/*
+
+*/

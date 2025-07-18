@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useMail } from "./context";
 import Select from "react-select";
 import { addMailForClient, getAllClients, getClientById } from "@/lib/actions";
+import type { MailPayload } from "@/lib/actions";
 
 type Client = {
   id: number;
@@ -19,8 +20,10 @@ export default function ReviewPage() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const { uploadedImages, clientGroups, setClientGroups, setUploadedImages } = useMail();
   const [modalImageIdx, setModalImageIdx] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-// Fetch companies on mount
+  // Fetch companies on mount
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
@@ -46,100 +49,214 @@ export default function ReviewPage() {
     fetchClient();
   }, [selectedClientId]);
 
-    // Prepare client options for the select dropdown
-    const clientOptions = companies.map(c => ({
-      value: c.id,
-      label: c.name,
-    }));
-
+  // Prepare client options for the select dropdown
+  const clientOptions = companies.map((c) => ({
+    value: c.id,
+    label: c.name,
+  }));
 
   // Group images by assignedClientId
   const groupedImages = uploadedImages.reduce((acc, image) => {
-    const clientId = image.assignedClientId ?? "unassigned";
-    if (!acc[clientId]) {
-      acc[clientId] = [];
-    }
-    acc[clientId].push(image);
+    const clientId = image.assignedClientId ?? "UNASSIGNED";
+    const key = typeof clientId === "number" ? clientId : "UNASSIGNED";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(image);
     return acc;
-  }, {} as Record<string | number, typeof uploadedImages>);
+  }, {} as Record<number | "UNASSIGNED", typeof uploadedImages>);
+
 
   // Handle updating notes in the context's clientGroups
-  function handleNoteChange(clientId: string | number, newNotes: string) {
-    setClientGroups((prev) =>
-      prev.map((group) =>
-        group.clientId === clientId ? { ...group, notes: newNotes } : group
-      )
-    );
-  }
+    function handleNoteChange(clientId: string | number, newNotes: string) {
+      setClientGroups((prev) =>
+        prev.map((group) =>
+          String(group.clientId) === String(clientId)
+            ? { ...group, notes: newNotes }
+            : group
+        )
+      );
+    }
 
+  // Update clientGroups when uploadedImages change, ensuring all clientIds exist
   useEffect(() => {
-  const uniqueClientIds = Array.from(
-    new Set(uploadedImages.map((img) => img.assignedClientId ?? "unassigned"))
-  );
+    const uniqueClientIds = Array.from(
+      new Set(uploadedImages.map((img) => img.assignedClientId ?? "UNASSIGNED"))
+    );
 
     setClientGroups((prevGroups) => {
-        // Avoid duplicates — make a Map for quick lookup
-        const groupMap = new Map(prevGroups.map((g) => [g.clientId, g]));
-
-        uniqueClientIds.forEach((clientId) => {
+      const groupMap = new Map(prevGroups.map((g) => [g.clientId, g]));
+      uniqueClientIds.forEach((clientId) => {
         if (!groupMap.has(clientId)) {
-            groupMap.set(clientId, {
+          groupMap.set(clientId, {
             clientId,
             notes: "",
             sent: false,
-            });
+          });
         }
-        });
-
-        return Array.from(groupMap.values());
+      });
+      return Array.from(groupMap.values());
     });
-    }, [uploadedImages, setClientGroups]);
-  
+  }, [uploadedImages, setClientGroups]);
+
+
+  async function submitClientGroup(clientId: string | number) {
+    setIsSubmitting(true);
+    setUploadProgress(0);
+    try {
+      const group = clientGroups.find(g => String(g.clientId) === String(clientId));
+      if (!group) throw new Error("Client group not found");
+
+      const images = uploadedImages.filter(
+        (img) => String(img.assignedClientId) === String(clientId)
+      );
+
+      if (images.length === 0) throw new Error("No images assigned to this client");
+
+      const payload: MailPayload = {
+        clientId,
+        images: images.map(img => ({ preview: img.original.preview })),
+        files: images.map((img) => img.original.file),
+        notes: group.notes,
+      };
+
+      setUploadProgress(25);
+
+      // Save to DB
+      await addMailForClient(payload);
+
+      setUploadProgress(50);
+      // Get client email data
+      const freshClient = await getClientById(Number(clientId));
+      if (!freshClient) throw new Error("Client not found");
+      
+      setUploadProgress(75);
+
+      await sendEmailWithAttachments(
+        payload.files,
+        payload.notes || '',
+        freshClient.primaryEmail,
+        freshClient.secondaryEmails
+      );
+
+      setUploadProgress(100);
+
+      //Set status as sent
+      setClientGroups((prev) =>
+        prev.map((group) =>
+          String(group.clientId) === String(clientId)
+            ? { ...group, sent: true }
+            : group
+        )
+      );
+
+      alert(`✅ Mail for ${freshClient.name} submitted and emailed!`);
+    } catch (err: any) {
+      alert(`❌ Failed to submit for client ${clientId}: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
+      setUploadProgress(0);
+    }
+  }
+
+  // Send email with attachments
+  async function sendEmailWithAttachments(files: File[], notes: string, toEmail: string, ccEmails: string[]) {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append("attachments", file);
+    });
+    formData.append("to", toEmail);
+    formData.append("subject", `Your mail has arrived at The DECK`);
+    formData.append("notes", notes);
+
+    if (ccEmails.length > 0) {
+      formData.append("cc", ccEmails.join(','));
+    }
+
+    const response = await fetch("/api/send-email", {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) throw new Error("Email sending failed");
+    return await response.json();
+  }
+
+  // Sort groups: put UNASSIGNED on top
+  const groupedEntries = Object.entries(groupedImages).sort(([a], [b]) => {
+    if (a === "UNASSIGNED") return -1;
+    if (b === "UNASSIGNED") return 1;
+    return 0;
+  });
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Review Uploaded Images</h1>
 
-      {Object.entries(groupedImages).map(([clientId, images]) => (
-        <div key={clientId} className="mb-8 border rounded p-4 bg-white shadow">
+      {groupedEntries.map(([clientId, images]) => (
+        <div
+          key={clientId}
+          className={`client-group mb-8 border rounded p-4 shadow ${
+            clientId === "UNASSIGNED"
+              ? "bg-yellow-100 border-yellow-400 text-red-600"
+              : "bg-white text-gray-800"
+          }`}
+        >
           <h2 className="text-xl font-semibold mb-2">
-            {clientId === "unassigned" ? "Unassigned" : `Client ${clientId}`}
+            {clientId === "UNASSIGNED" ? "⚠️ Unassigned Images" :
+            companies.find((c) => c.id === Number(clientId))?.name ?? `Client ${clientId}`}
           </h2>
+
+        {/* Progress bar */}
+        {isSubmitting && (
+          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+            <div 
+              className="bg-blue-600 h-2.5 rounded-full" 
+              style={{ width: `${uploadProgress}%` }}
+            ></div>
+          </div>
+        )}
 
           {/* Image grid */}
           <div className="flex flex-wrap gap-4 mb-4">
             {images.map((img, idx) => (
-            <div
-              key={idx}
-              className="border rounded overflow-hidden cursor-pointer"
-              onClick={() => setModalImageIdx(uploadedImages.indexOf(img))}
-              title="Click to enlarge"
-            >
+              <div
+                key={idx}
+                className="border rounded overflow-hidden cursor-pointer"
+                onClick={() => setModalImageIdx(uploadedImages.indexOf(img))}
+                title="Click to enlarge"
+              >
               <Image
-                src={img.preview}
+                src={img.original.preview}
                 alt={`Client ${clientId} Image ${idx + 1}`}
                 width={150}
                 height={150}
                 className="object-cover w-36 h-36"
               />
-            </div>
+              </div>
             ))}
           </div>
 
           {/* Notes input */}
           <textarea
-            value={
-              clientGroups.find((g) => g.clientId === clientId)?.notes || ""
-            }
+            value={clientGroups.find((g) => String(g.clientId) === String(clientId))?.notes || ""}
             onChange={(e) => handleNoteChange(clientId, e.target.value)}
             placeholder={`Notes for ${
-              clientId === "unassigned" ? "Unassigned" : `Client ${clientId}`
+              clientId === "UNASSIGNED" ? "Unassigned" : `Client ${clientId}`
             }`}
             className="w-full border rounded p-2 text-gray-700"
             rows={3}
           />
+          {clientId !== "UNASSIGNED" && (
+            <button
+              className="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              disabled={isSubmitting}
+              onClick={() => submitClientGroup(Number(clientId))}
+            >
+              Submit for {companies.find(c => c.id === Number(clientId))?.name}
+            </button>
+          )}
         </div>
       ))}
 
+      {/* Modal */}
       {modalImageIdx !== null && (
         <div
           className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
@@ -151,7 +268,7 @@ export default function ReviewPage() {
           >
             {/* Image preview */}
             <Image
-              src={uploadedImages[modalImageIdx].preview}
+              src={uploadedImages[modalImageIdx].original.preview}
               alt={`Enlarged preview ${modalImageIdx + 1}`}
               width={800}
               height={600}
@@ -177,7 +294,6 @@ export default function ReviewPage() {
                       assignedClientId: clientId,
                     };
                   }
-                  // Assuming you have setUploadedImages from context
                   setUploadedImages(updatedImages);
                 }}
                 placeholder="Search or select a Client..."
@@ -203,7 +319,13 @@ export default function ReviewPage() {
                 className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
                 aria-label="Previous image"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
@@ -219,7 +341,13 @@ export default function ReviewPage() {
                 className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
                 aria-label="Next image"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </button>
@@ -227,8 +355,17 @@ export default function ReviewPage() {
           </div>
         </div>
       )}
-
-
     </div>
   );
 }
+
+/*
+
+Displays OCR text
+
+{img.processed?.ocrText && (
+  <div className="mt-2 p-2 bg-gray-100 rounded text-sm whitespace-pre-wrap">
+    <strong>OCR Text:</strong> {img.processed.ocrText}
+  </div>
+)}
+*/

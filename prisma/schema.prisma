@@ -26,7 +26,7 @@ model Mail {
   id          Int      @id @default(autoincrement())
   client      Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId    Int
-  imageUrls   String[] // Array of storage URLs
+  imageUrls   String[] // Array of storage URLs       
   status      String?  @default("notified")
   urgency     Int?     @default(1)
   notes       String?
