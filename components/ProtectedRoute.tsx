@@ -4,12 +4,6 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import Loading from "@/app/loading";
-import { Session } from "next-auth";
-
-type ProtectedRouteProps = {
-  children: React.ReactNode;
-  session: Session | null;
-};
 
 /**
  * Component shown when a logged-in user is missing a userName.
