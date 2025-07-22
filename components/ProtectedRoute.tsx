@@ -19,7 +19,6 @@ function IdentifyUser() {
     setLoading(true);
 
     try {
-      // Audit log before updating session/user
       await fetch("/api/audit-log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -28,15 +27,13 @@ function IdentifyUser() {
           userName: name,
           action: "LOGIN",
           meta: { timestamp: new Date().toISOString() }
-        }),
+        })
       });
 
       await update({ userName: name });
 
-      // Wait for session propagation (Vercel/serverless may lag otherwise)
-      await new Promise(r => setTimeout(r, 700));
-
-      router.replace("/mail-upload");
+      // 🔥 Force hard reload to refresh session and prevent lag
+      window.location.href = "/mail-upload";
     } catch (err) {
       const message =
         err instanceof Error
@@ -49,6 +46,7 @@ function IdentifyUser() {
       setLoading(false);
     }
   };
+
 
   if (loading) return <Loading message="Almost ready..." />;
 
