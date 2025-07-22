@@ -4,6 +4,12 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import Loading from "@/app/loading";
+import { Session } from "next-auth";
+
+type ProtectedRouteProps = {
+  children: React.ReactNode;
+  session: Session | null;
+};
 
 /**
  * Component shown when a logged-in user is missing a userName.
@@ -106,7 +112,8 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   // Show a loading spinner while auth is loading
   if (status === "loading" || !session) {
-    return <Loading message="Loading your workspace..." />;
+    return <IdentifyUser />;
+    // return <Loading message="Loading your workspace..." />;
   }
 
   // Ask for name if logged in but session.userName is missing
