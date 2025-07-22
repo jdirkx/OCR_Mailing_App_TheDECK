@@ -143,7 +143,7 @@ export default function ReviewPage() {
       setClientGroups((prev) =>
         prev.map((group) =>
           String(group.clientId) === String(clientId)
-            ? { ...group, sent: true }
+            ? { ...group, sent: true, notes: "" }
             : group
         )
       );
@@ -184,35 +184,50 @@ export default function ReviewPage() {
     if (a === "UNASSIGNED") return -1;
     if (b === "UNASSIGNED") return 1;
     return 0;
-  });
+  });    
 
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Review Uploaded Images</h1>
+return (
+  <div className="p-6">
+    <h1 className="text-2xl font-bold mb-4">Review Uploaded Images</h1>
 
-      {groupedEntries.map(([clientId, images]) => (
+    {groupedEntries.map(([clientId, images]) => {
+      const isSent = clientGroups.find(
+        (g) => String(g.clientId) === String(clientId)
+      )?.sent;
+
+      return (
         <div
           key={clientId}
           className={`client-group mb-8 border rounded p-4 shadow ${
-            clientId === "UNASSIGNED"
+            isSent
+              ? "bg-gray-300 text-gray-800"
+              : clientId === "UNASSIGNED"
               ? "bg-yellow-100 border-yellow-400 text-red-600"
               : "bg-white text-gray-800"
           }`}
         >
-          <h2 className="text-xl font-semibold mb-2">
-            {clientId === "UNASSIGNED" ? "⚠️ Unassigned Images" :
-            companies.find((c) => c.id === Number(clientId))?.name ?? `Client ${clientId}`}
+          {/* Heading with "Sent" badge */}
+          <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
+            {clientId === "UNASSIGNED"
+              ? "⚠️ Unassigned Images"
+              : companies.find((c) => c.id === Number(clientId))?.name ??
+                `Client ${clientId}`}
+            {isSent && (
+              <span className="px-2 py-1 text-sm bg-green-200 text-green-800 rounded-full">
+                ✅ Sent
+              </span>
+            )}
           </h2>
 
-        {/* Progress bar */}
-        {isSubmitting && (
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-            <div 
-              className="bg-blue-600 h-2.5 rounded-full" 
-              style={{ width: `${uploadProgress}%` }}
-            ></div>
-          </div>
-        )}
+          {/* Progress bar */}
+          {isSubmitting && (
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full"
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+            </div>
+          )}
 
           {/* Image grid */}
           <div className="flex flex-wrap gap-4 mb-4">
@@ -220,41 +235,54 @@ export default function ReviewPage() {
               <div
                 key={idx}
                 className="border rounded overflow-hidden cursor-pointer"
-                onClick={() => setModalImageIdx(uploadedImages.indexOf(img))}
+                onClick={() =>
+                  setModalImageIdx(uploadedImages.indexOf(img))
+                }
                 title="Click to enlarge"
               >
-              <Image
-                src={img.original.preview}
-                alt={`Client ${clientId} Image ${idx + 1}`}
-                width={150}
-                height={150}
-                className="object-cover w-36 h-36"
-              />
+                <Image
+                  src={img.original.preview}
+                  alt={`Client ${clientId} Image ${idx + 1}`}
+                  width={150}
+                  height={150}
+                  className="object-cover w-36 h-36"
+                />
               </div>
             ))}
           </div>
 
           {/* Notes input */}
           <textarea
-            value={clientGroups.find((g) => String(g.clientId) === String(clientId))?.notes || ""}
+            value={
+              clientGroups.find(
+                (g) => String(g.clientId) === String(clientId)
+              )?.notes || ""
+            }
             onChange={(e) => handleNoteChange(clientId, e.target.value)}
             placeholder={`Notes for ${
-              clientId === "UNASSIGNED" ? "Unassigned" : `Client ${clientId}`
+              clientId === "UNASSIGNED"
+                ? "Unassigned"
+                : companies.find((c) => c.id === Number(clientId))?.name ??
+                  `Client ${clientId}`
             }`}
             className="w-full border rounded p-2 text-gray-700"
             rows={3}
           />
-          {clientId !== "UNASSIGNED" && (
+
+          {/* Submit button */}
+          {clientId !== "UNASSIGNED" && !isSent && (
             <button
               className="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
               disabled={isSubmitting}
               onClick={() => submitClientGroup(Number(clientId))}
             >
-              Submit for {companies.find(c => c.id === Number(clientId))?.name}
+              Submit for{" "}
+              {companies.find((c) => c.id === Number(clientId))?.name}
             </button>
           )}
         </div>
-      ))}
+      );
+    })}
 
       {/* Modal */}
       {modalImageIdx !== null && (
