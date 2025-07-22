@@ -1,15 +1,13 @@
-"use client";
+import { auth } from "@/auth";
 import { SessionProvider } from "next-auth/react";
-import ProtectedRoute from "@/components/ProtectedRoute";
 import Navbar from "@/components/Navbar";
 
-export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
+export default async function MyComponent({ children }: { children: React.ReactNode }) {
+  const session = await auth();
   return (
-    <SessionProvider>
-      <ProtectedRoute>
-        <Navbar />
-        {children}
-      </ProtectedRoute>
+    <SessionProvider session={session}>
+      <Navbar />
+      {children}
     </SessionProvider>
   );
 }

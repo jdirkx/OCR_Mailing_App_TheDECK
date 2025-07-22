@@ -31,8 +31,10 @@ function IdentifyUser() {
 
       await update({ userName: name });
 
-      // 🔥 Force hard reload to refresh session and prevent lag
-      window.location.href = "/mail-upload";
+      const router = useRouter();
+      await update({ userName: name });
+      router.replace("/mail-upload"); // Faster, preserves session context
+
     } catch (err) {
       const message =
         err instanceof Error
