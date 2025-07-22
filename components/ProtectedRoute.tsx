@@ -1,15 +1,20 @@
 "use client";
+
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import Loading from "@/app/loading"; // make sure the path is correct
+import Loading from "@/app/loading";
 
+/**
+ * Component shown when a logged-in user is missing a userName.
+ */
 function IdentifyUser() {
   const { update, data: session } = useSession();
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [loading, setLoading] = useState(false); // for spinner after submit
+  const [loading, setLoading] = useState(false);
+  const router = useRouter(); 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,16 +30,13 @@ function IdentifyUser() {
           email: session?.user?.email ?? null,
           userName: name,
           action: "LOGIN",
-          meta: { timestamp: new Date().toISOString() }
-        })
+          meta: { timestamp: new Date().toISOString() },
+        }),
       });
 
       await update({ userName: name });
 
-      const router = useRouter();
-      await update({ userName: name });
-      router.replace("/mail-upload"); // Faster, preserves session context
-
+      router.replace("/mail-upload");
     } catch (err) {
       const message =
         err instanceof Error
@@ -42,13 +44,14 @@ function IdentifyUser() {
           : typeof err === "string"
           ? err
           : "Unknown error";
+
       setError("Something went wrong: " + message);
       setSubmitting(false);
       setLoading(false);
     }
   };
 
-
+  // Show spinner after clicking submit
   if (loading) return <Loading message="Almost ready..." />;
 
   return (
@@ -64,7 +67,7 @@ function IdentifyUser() {
         value={name}
         autoFocus
         disabled={submitting}
-        onChange={e => setName(e.target.value)}
+        onChange={(e) => setName(e.target.value)}
         required
       />
       {session?.user?.email && (
@@ -87,31 +90,30 @@ function IdentifyUser() {
   );
 }
 
+/**
+ * Entry point for all protected pages.
+ * Requires a valid NextAuth session + userName.
+ */
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [internalError] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated" && session === null) {
-      router.replace("/");
+      router.replace("/login"); // Redirect if not logged in
     }
   }, [status, session, router]);
 
-  if (internalError) {
-    return <div className="text-red-600">{internalError}</div>;
-  }
-
-  // Loader while fetching session or waiting for update
+  // Show a loading spinner while auth is loading
   if (status === "loading" || !session) {
     return <Loading message="Loading your workspace..." />;
   }
 
-  // Identification-required step
+  // Ask for name if logged in but session.userName is missing
   if (!session.userName) {
     return <IdentifyUser />;
   }
 
-  // Render the protected children (main content)
-  return <>{children || <Loading message="Loading page..." />}</>;
+  // Authenticated and identified — render page
+  return <>{children}</>;
 }
