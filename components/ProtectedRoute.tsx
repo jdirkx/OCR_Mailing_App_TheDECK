@@ -10,7 +10,6 @@ function IdentifyUser() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(false); // for spinner after submit
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
