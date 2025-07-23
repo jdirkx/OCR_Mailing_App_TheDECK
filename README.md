@@ -38,7 +38,7 @@ session: {
 ```
 components/         # UI components
 lib/                # Server actions (Prisma, auth)
-pages/api/          # Email API route (Resend)
+app/api/          # Email API route & Auth (Resend)
 app/(public)/       # Login screen
 app/(protected)/    # Authenticated pages
   mail-upload/        Upload + notify workflow
@@ -76,7 +76,7 @@ prisma/schema.prisma
 
 ## 📬 Mail Flow
 
-> 1. Staff uploads envelope scans (JPEG, PDF)  
+> 1. Staff uploads envelope scans (Picture file)  
 > 2. Assigns to a client + optional memo  
 > 3. Click “Submit”  
 > 4. System:  
@@ -144,6 +144,7 @@ export async function signOutAction() {
 
 ## 🚨 Environment Variables
 
+> **Check Intern2025 Drive for keys...**
 > ```
 > DATABASE_URL=postgres://...
 > GOOGLE_CLIENT_ID=
@@ -177,6 +178,6 @@ export async function signOutAction() {
 ## 🧳 Maintainers
 
 > **The DECK 株式会社**  
-> For onboarding, production secrets, and deployment instructions, refer to [internal playbook].
+> For onboarding, production secrets, and deployment instructions, refer to software documents in Intern2025 drive.
 
 **License**: MIT 
