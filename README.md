@@ -1,36 +1,182 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📦 The DECK Mail Intake System
 
-## Getting Started
+> **This is a secure mail intake and delivery management platform built for The DECK株式会社.  
+> It enables staff to:**
+> - Upload and preview received mail  
+> - Assign mail to registered clients  
+> - Trigger email notifications  
+> - Track user and system actions with audit logs
 
-First, run the development server:
+## 🚀 Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+| Tool           | Use Case                             |
+|----------------|--------------------------------------|
+| Next.js        | Web framework (App Router)           |
+| NextAuth.js    | Authentication (Google SSO)          |
+| Prisma         | PostgreSQL ORM                       |
+| Resend API     | Transactional email delivery         |
+| Tailwind CSS   | Responsive styling                   |
+| JWT + Cookies  | User sessions                        |
+
+## 🔐 Authentication
+
+> - Google Sign In via NextAuth  
+> - Only allowlisted emails can log in  
+> - Users must identify themselves with a name after first login  
+> - **Sessions expire after 30 minutes, no auto-renewal**
+
+```
+session: {
+  strategy: "jwt",
+  maxAge: 1800,
+  updateAge: 0,
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📁 Project Structure
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+components/         # UI components
+lib/                # Server actions (Prisma, auth)
+pages/api/          # Email API route (Resend)
+app/(public)/       # Login screen
+app/(protected)/    # Authenticated pages
+  mail-upload/        Upload + notify workflow
+  clients-list/       Manage clients
+  settings/           Audit logs
+auth.ts             # NextAuth config
+prisma/schema.prisma
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🧭 Table of Contents
 
-## Learn More
+> - [Tech Stack](#-tech-stack)
+> - [Authentication](#-authentication)
+> - [Project Structure](#-project-structure)
+> - [Key Components](#-key-components)
+> - [Mail Flow](#-mail-flow)
+> - [Prisma Schema](#-prisma-schema-summary)
+> - [Server Actions](#-server-actions-libactionsts)
+> - [Sign Out](#-sign-out)
+> - [Environment Variables](#-environment-variables)
+> - [Useful Commands](#-useful-commands)
+> - [TODO / Suggestions](#-todo--suggestions)
+> - [Maintainers](#-maintainers)
 
-To learn more about Next.js, take a look at the following resources:
+## 🧩 Key Components
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Component          | Description                                          |
+|--------------------|------------------------------------------------------|
+| `Navbar`           | Appears after login — navigates users through app    |
+| `ProtectedRoute`   | Guards all protected pages, prompts for `userName`   |
+| `ClientsList`      | Create, edit, delete clients                         |
+| `AuditLogModal*`   | View login and user action logs                      |
+| `MailUploadFlow`   | Complete upload → notify flow (2 steps)              |
+| `EmailTemplate`    | HTML email layout using inline CSS                   |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📬 Mail Flow
 
-## Deploy on Vercel
+> 1. Staff uploads envelope scans (JPEG, PDF)  
+> 2. Assigns to a client + optional memo  
+> 3. Click “Submit”  
+> 4. System:  
+>    - Saves mail to DB  
+>    - Sends email using Resend  
+>    - Logs audit trail (SEND_EMAIL)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📚 Prisma Schema Summary
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> This schema covers client, mail, and audit log storage. See [prisma/schema.prisma](prisma/schema.prisma):
+
+```
+model Client {
+  id               Int      @id @default(autoincrement())
+  name             String
+  primaryEmail     String   @unique
+  secondaryEmails  String[]
+  createdAt        DateTime @default(now())
+  mails            Mail[]
+}
+
+model Mail {
+  id          Int      @id @default(autoincrement())
+  clientId    Int
+  imageUrls   String[]
+  notes       String?
+  status      String?  @default("notified")
+  urgency     Int?     @default(1)
+  receivedAt  DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  email     String
+  userName  String
+  action    String
+  meta      Json?
+  createdAt DateTime @default(now())
+}
+```
+
+## 🛠 Server Actions (`lib/actions.ts`)
+
+> | Function               | Purpose                            |
+> |------------------------|-------------------------------------|
+> | `getAllClients`        | Load all client records             |
+> | `addClient`            | Create client + audit log           |
+> | `editClient`           | Update client + audit log           |
+> | `deleteClient`         | Remove client + audit log           |
+> | `addMailForClient`     | Submit scanned mail info to DB      |
+> | `auditLog`             | General-purpose logger              |
+> | `getAuditLogs`         | Fetch 100 latest actions            |
+
+## 🔐 Sign Out
+
+> Use the following server action for secure sign-out + redirect:
+
+```tsx
+// lib/auth-actions.tsx
+export async function signOutAction() {
+  await signOut({ redirect: false });
+  redirect('/login');
+}
+```
+
+## 🚨 Environment Variables
+
+> ```
+> DATABASE_URL=postgres://...
+> GOOGLE_CLIENT_ID=
+> GOOGLE_CLIENT_SECRET=
+> AUTHORIZED_EMAILS=email1@example.com,email2@example.com
+> AUTH_SECRET=supersecretkey
+> RESEND_API_KEY=...
+> EMAIL_MOCK_MODE=true
+> ```
+
+## 🔍 Useful Commands
+
+> ```
+> # Run app locally
+> npm run dev
+>
+> # Migrate database
+> npx prisma migrate dev --name init
+>
+> # Open Prisma Studio
+> npx prisma studio
+> ```
+
+## ✅ TODO / Suggestions
+
+> - [ ] CSV export for client list  
+> - [ ] Email bounce/error tracking page  
+> - [ ] Middleware for route-based protection  
+> - [ ] File upload to cloud (S3, Supabase)
+
+## 🧳 Maintainers
+
+> **The DECK 株式会社**  
+> For onboarding, production secrets, and deployment instructions, refer to [internal playbook].
+
+**License**: MIT 
