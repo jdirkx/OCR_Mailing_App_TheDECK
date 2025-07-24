@@ -50,7 +50,7 @@ export default function ImageUploadStep() {
       alert("Please upload at least one image before proceeding.");
       return;
     }
-    router.push("/review");
+    router.push('/ocr');
   }
 
   return (

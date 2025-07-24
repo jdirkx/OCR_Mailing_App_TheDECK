@@ -241,7 +241,7 @@ return (
                 title="Click to enlarge"
               >
                 <Image
-                  src={img.original.preview}
+                  src={img.processed?.preview ?? img.original.preview}
                   alt={`Client ${clientId} Image ${idx + 1}`}
                   width={150}
                   height={150}
@@ -296,7 +296,7 @@ return (
           >
             {/* Image preview */}
             <Image
-              src={uploadedImages[modalImageIdx].original.preview}
+              src={uploadedImages[modalImageIdx].processed?.preview ?? uploadedImages[modalImageIdx].original.preview}
               alt={`Enlarged preview ${modalImageIdx + 1}`}
               width={800}
               height={600}

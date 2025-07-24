@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "install-opencv": "node preinstall_opencv.js"
+    "lint": "next lint"
   },
   "packageManager": "npm@15.3.3",
   "overrides": {
@@ -21,12 +20,14 @@
     "formidable": "^3.5.4",
     "next": "15.3.3",
     "next-auth": "^5.0.0-beta.28",
+    "opencv.js": "^1.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-select": "^5.10.1",
     "resend": "^4.6.0",
     "tailwind-animate": "^0.2.10",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "tesseract.js": "^6.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
