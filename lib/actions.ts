@@ -75,6 +75,14 @@ export async function auditSendEmail({
   });
 }
 
+//Mail info per client - only used in backend
+export type MailPayload = {
+  clientId: number | String;
+  images: { preview: string }[]; 
+  files: File[];
+  notes?: string;
+};
+
 // Get client information by ID (includes secondary emails)
 export async function getClientById(clientId: number) {
   return await prisma.client.findUnique({
@@ -160,23 +168,15 @@ export async function deleteClient(
 }
 
 // Mail Intake: Add mail for a client
-export async function addMailForClient(
-  clientId: number,
-  mailData: {
-    imageUrls: string[];
-    status?: string;
-    urgency?: number;
-    notes?: string;
+export async function addMailForClient(payload: MailPayload) {
+  if (typeof payload.clientId !== "number") {
+    throw new Error("clientId must be a number");
   }
-) {
   return await prisma.mail.create({
     data: {
-      clientId: clientId,
-      imageUrls: mailData.imageUrls,
-      status: mailData.status || 'pending',
-      urgency: mailData.urgency || 1,
-      notes: mailData.notes || '',
-      receivedAt: new Date(),
+      clientId: payload.clientId,
+      imageUrls: payload.images.map(img => img.preview),
+      notes: payload.notes ?? ''
     },
   });
 }

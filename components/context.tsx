@@ -1,0 +1,63 @@
+"use client";
+
+import React, { createContext, useContext, useState } from "react";
+
+export type UploadedImage = {
+  id: string;
+  text: string;
+  original:{
+    preview: string;
+    file: File
+  };
+  processed?:{
+    preview?: string;
+    ocrText?: string;
+  };
+  assignedClientId: number | null;
+  sent: boolean;
+};
+
+export type ClientGroup = {
+  clientId: number | string;
+  notes: string;
+  sent: boolean;
+};
+
+type MailContextType = {
+  uploadedImages: UploadedImage[];
+  setUploadedImages: React.Dispatch<React.SetStateAction<UploadedImage[]>>;
+  clientGroups: ClientGroup[];
+  setClientGroups: React.Dispatch<React.SetStateAction<ClientGroup[]>>;
+  clearMail: () => void;
+};
+
+const MailContext = createContext<MailContextType | undefined>(undefined);
+
+export const MailProvider = ({ children }: { children: React.ReactNode }) => {
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+  const [clientGroups, setClientGroups] = useState<ClientGroup[]>([]);
+
+  const clearMail = () => {
+    setUploadedImages([]);
+    setClientGroups([]);  
+  };
+
+  return (
+    <MailContext.Provider 
+      value={{ uploadedImages, setUploadedImages, clientGroups, setClientGroups, clearMail}}>
+      {children}
+    </MailContext.Provider>
+  );
+};
+
+export function useMail() {
+  const context = useContext(MailContext);
+  if (!context) {
+    throw new Error("useMail must be used within a MailProvider");
+  }
+  return context;
+}
+
+/*
+
+*/

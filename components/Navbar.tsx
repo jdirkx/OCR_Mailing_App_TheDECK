@@ -18,6 +18,9 @@ export default function Navbar() {
               <Link href="/clients-list" className="hover:text-blue-300 transition navbar-button">Clients</Link>
             </li>
             <li>
+              <Link href="/review" className="hover:text-blue-300 transition navbar-button">Review</Link>
+            </li>
+            <li>
               <Link href="/settings" className="hover:text-blue-300 transition navbar-button">Settings</Link>
             </li>
           </ul>

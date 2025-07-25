@@ -1,39 +1,42 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model Client {
-  id              Int       @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   name            String
-  primaryEmail    String    @unique
-  secondaryEmails String[]  // Array of secondary emails (no limit)
-  createdAt       DateTime  @default(now())
+  primaryEmail    String   @unique
+  secondaryEmails String[]
+  createdAt       DateTime @default(now())
   mails           Mail[]
 }
 
 // Inactive
 model Mail {
-  id          Int      @id @default(autoincrement())
-  client      Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  clientId    Int
-  imageUrls   String[] // Array of storage URLs
-  status      String?  @default("notified")
-  urgency     Int?     @default(1)
-  notes       String?
-  receivedAt  DateTime @default(now())
-  notifiedAt  DateTime?
+  id          Int       @id @default(autoincrement())
+  receivedAt  DateTime  @default(now())
   collectedAt DateTime?
+  imageUrls   String[]
+  notes       String?
+  notifiedAt  DateTime?
+  status      String?   @default("notified")
+  urgency     Int?      @default(1)
+  clientId    Int
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  email     String
+  userName  String
+  action    String
+  meta      Json?
+  createdAt DateTime @default(now())
 }
 
 model AuditLog {
