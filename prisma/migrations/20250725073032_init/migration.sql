@@ -1,22 +1,3 @@
-/*
-  Warnings:
-
-  - You are about to drop the column `companyId` on the `Mail` table. All the data in the column will be lost.
-  - You are about to drop the `Company` table. If the table is not empty, all the data it contains will be lost.
-  - Added the required column `clientId` to the `Mail` table without a default value. This is not possible if the table is not empty.
-
-*/
--- DropForeignKey
-ALTER TABLE "Mail" DROP CONSTRAINT "Mail_companyId_fkey";
-
--- AlterTable
-ALTER TABLE "Mail" DROP COLUMN "companyId",
-ADD COLUMN     "clientId" INTEGER NOT NULL,
-ALTER COLUMN "status" SET DEFAULT 'notified';
-
--- DropTable
-DROP TABLE "Company";
-
 -- CreateTable
 CREATE TABLE "Client" (
     "id" SERIAL NOT NULL,
@@ -29,10 +10,24 @@ CREATE TABLE "Client" (
 );
 
 -- CreateTable
+CREATE TABLE "Mail" (
+    "id" SERIAL NOT NULL,
+    "receivedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "collectedAt" TIMESTAMP(3),
+    "imageUrls" TEXT[],
+    "notes" TEXT,
+    "notifiedAt" TIMESTAMP(3),
+    "status" TEXT DEFAULT 'notified',
+    "urgency" INTEGER DEFAULT 1,
+    "clientId" INTEGER NOT NULL,
+
+    CONSTRAINT "Mail_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "AuditLog" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "userCode" TEXT NOT NULL,
     "userName" TEXT NOT NULL,
     "action" TEXT NOT NULL,
     "meta" JSONB,

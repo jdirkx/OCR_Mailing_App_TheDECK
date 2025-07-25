@@ -16,7 +16,6 @@ const router = useRouter();
 const { uploadedImages, setUploadedImages } = useMail();
 const [cvReady, setCvReady] = useState(false);
 const [processedCount, setProcessedCount] = useState(0);
-const totalImages = uploadedImages.length;
 
     // Load OpenCV
     useEffect(() => {
@@ -101,18 +100,22 @@ const totalImages = uploadedImages.length;
 
     // Navigate to review page when done
     useEffect(() => {
-        if (
-        totalImages > 0 &&
-        processedCount === totalImages &&
-        uploadedImages.every((img) => img.processed?.ocrText)
-        ) {
+    const done = uploadedImages.length > 0 &&
+                uploadedImages.every(img => img.processed?.ocrText);
+
+    if (done) {
         router.push("/review");
-        }
-    }, [processedCount, uploadedImages, totalImages, router]);
+    }
+    }, [uploadedImages, router]);
+
+    // Progress Bar
+
+    const totalImages = uploadedImages.length;
+    const completed = uploadedImages.filter((img) => img.processed?.ocrText).length;
 
     const uploadProgress = totalImages
-        ? Math.round((processedCount / totalImages) * 100)
-        : 0;
+    ? Math.round((completed / totalImages) * 100)
+    : 0;
 
     return (
         <div className="p-8">

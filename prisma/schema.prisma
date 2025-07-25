@@ -16,7 +16,6 @@ model Client {
   mails           Mail[]
 }
 
-// Inactive
 model Mail {
   id          Int       @id @default(autoincrement())
   receivedAt  DateTime  @default(now())
@@ -28,15 +27,6 @@ model Mail {
   urgency     Int?      @default(1)
   clientId    Int
   client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-}
-
-model AuditLog {
-  id        String   @id @default(uuid())
-  email     String
-  userName  String
-  action    String
-  meta      Json?
-  createdAt DateTime @default(now())
 }
 
 model AuditLog {

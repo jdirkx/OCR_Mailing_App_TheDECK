@@ -59,8 +59,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={workSans.variable} suppressHydrationWarning>
-        {children}
-        <TransitionLoader />
         <MailProvider>
           {children}
         </MailProvider>
