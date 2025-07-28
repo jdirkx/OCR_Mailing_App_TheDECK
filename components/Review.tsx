@@ -22,6 +22,8 @@ export default function ReviewPage() {
   const [modalImageIdx, setModalImageIdx] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingClientId, setPendingClientId] = useState<number | null>(null);
 
   // Fetch companies on mount
   useEffect(() => {
@@ -274,7 +276,10 @@ return (
             <button
               className="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
               disabled={isSubmitting}
-              onClick={() => submitClientGroup(Number(clientId))}
+              onClick={() => {
+                setPendingClientId(Number(clientId));
+                setShowConfirm(true);
+              }}
             >
               Submit for{" "}
               {companies.find((c) => c.id === Number(clientId))?.name}
@@ -283,6 +288,40 @@ return (
         </div>
       );
     })}
+
+    {/* Confirmation Overlay */}
+      {showConfirm && pendingClientId !== null && (
+      <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+          <h2 className="text-xl font-semibold mb-4">Confirm Submission</h2>
+          <p className="mb-6">Are you sure you want to submit this mail?</p>
+          <div className="flex justify-center gap-4">
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+              onClick={async () => {
+                setShowConfirm(false);
+                if (pendingClientId !== null) {
+                  await submitClientGroup(pendingClientId);
+                  setPendingClientId(null);
+                }
+              }}
+            >
+              Yes, Submit
+            </button>
+            <button
+              className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition"
+              onClick={() => {
+                setShowConfirm(false);
+                setPendingClientId(null);
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+      )}
+
 
       {/* Modal */}
       {modalImageIdx !== null && (
