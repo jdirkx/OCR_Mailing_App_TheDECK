@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 import { EmailTemplate } from '../../../components/EmailTemplate'; // Adjust path as needed
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const from = process.env.RESEND_FROM!;
 
 export async function POST(req: NextRequest) {
   try {
@@ -58,9 +59,8 @@ export async function POST(req: NextRequest) {
       attachments: attachments.map(a => a.filename),
     });
 
-    // Send email via Resend
     const { data, error } = await resend.emails.send({
-      from: 'Your Mail Service <onboarding@resend.dev>', // Must be a verified sender in Resend
+      from, // Now pulls from environment
       to: to as string,
       cc: cc.length > 0 ? cc : undefined,
       subject: subject as string,
@@ -71,6 +71,7 @@ export async function POST(req: NextRequest) {
       }),
       attachments,
     });
+
 
     if (error) {
       console.error('Resend error:', error);

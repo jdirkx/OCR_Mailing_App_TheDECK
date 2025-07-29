@@ -249,7 +249,15 @@ return (
                   height={150}
                   className="object-cover w-36 h-36"
                 />
+              {/* TESTING - displays ocr test*/}
+              {img.processed?.ocrText && (
+                <div className="mt-2 p-2 bg-gray-100 rounded text-sm whitespace-pre-wrap">
+                  <strong>OCR Text:</strong> {img.processed.ocrText}
+                </div>
+              )}
               </div>
+
+              
             ))}
           </div>
 

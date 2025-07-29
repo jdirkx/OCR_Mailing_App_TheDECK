@@ -65,8 +65,11 @@ const [processedCount, setProcessedCount] = useState(0);
             const src = cv.imread(canvas);
             const dst = new cv.Mat();
 
+            // Processing - grayscale, denoising, thresholding, resizing
             cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY);
+            cv.GaussianBlur(dst, dst, new cv.Size(3, 3), 0);
             cv.threshold(dst, dst, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU);
+            cv.resize(dst, dst, new cv.Size(0, 0), 2, 2, cv.INTER_LINEAR);
             cv.imshow(canvas, dst);
 
             const processedPreview = canvas.toDataURL("image/png");
@@ -76,6 +79,8 @@ const [processedCount, setProcessedCount] = useState(0);
 
             // Perform OCR
             const result = await Tesseract.recognize(processedPreview, "eng+jpn", {
+                //tessedit_pageseg_mode: "5"
+                //tessedit_ocr_engine_mode: "1"
                 logger: (m) => console.log(m),
             });
 
