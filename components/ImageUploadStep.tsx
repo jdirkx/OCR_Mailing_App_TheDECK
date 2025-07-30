@@ -21,7 +21,7 @@ export default function ImageUploadStep() {
         text: "",
         original: {
           file,
-          preview: URL.createObjectURL(file),
+          preview: URL.createObjectURL(file), //maybe don't assign until OCR step
         },
         processed: undefined,
         assignedClientId: null,
