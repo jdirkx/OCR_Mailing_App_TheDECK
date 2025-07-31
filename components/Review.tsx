@@ -57,6 +57,8 @@ export default function ReviewPage() {
     label: c.name,
   }));
 
+  //Insert ClientId assignment function
+
   // Group images by assignedClientId
   const groupedImages = uploadedImages.reduce((acc, image) => {
     const clientId = image.assignedClientId ?? "UNASSIGNED";

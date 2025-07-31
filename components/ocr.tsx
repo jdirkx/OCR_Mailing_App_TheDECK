@@ -15,22 +15,17 @@ export default function ProcessStep() {
   const { uploadedImages, setUploadedImages } = useMail();
   const [cvReady, setCvReady] = useState(false);
   const [processedCount, setProcessedCount] = useState(0);
+  const totalImages = uploadedImages.length;
 
   // Load OpenCV
   useEffect(() => {
-    if (
-      typeof window !== "undefined" &&
-      !window.cv &&
-      !document.getElementById("opencv-script")
-    ) {
+    if (typeof window !== "undefined" && !window.cv && !document.getElementById("opencv-script")) {
       const script = document.createElement("script");
       script.id = "opencv-script";
       script.src = "/opencv/opencv.js";
       script.async = true;
       script.onload = () => {
-        window.cv.onRuntimeInitialized = () => {
-          setCvReady(true);
-        };
+        window.cv.onRuntimeInitialized = () => setCvReady(true);
       };
       document.body.appendChild(script);
     } else if (window.cv && window.cv.Mat) {
@@ -38,82 +33,54 @@ export default function ProcessStep() {
     }
   }, []);
 
-  // File -> HTMLImageElement
-  function fileToImageElement(file: File): Promise<HTMLImageElement> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-        img.src = reader.result as string;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  // Run OCR via API on all uploaded images
+  // Process images when OpenCV is ready
   useEffect(() => {
     if (!cvReady || uploadedImages.length === 0) return;
 
-    const runOCRBatch = async () => {
-      for (let idx = 0; idx < uploadedImages.length; idx++) {
-        const img = uploadedImages[idx];
-        if (img.processed?.ocrText) continue;
+    uploadedImages.forEach((img, idx) => {
+      if (img.processed?.ocrText) return;
+
+      const processImage = async () => {
+        const file = img.original.file;
+        const objectUrl = URL.createObjectURL(file);
+        const image = new Image();
+        image.src = objectUrl;
 
         try {
-          const image = await fileToImageElement(img.original.file);
           await image.decode();
-
-          const scaleFactor = 2;
           const canvas = document.createElement("canvas");
-          canvas.width = image.width * scaleFactor;
-          canvas.height = image.height * scaleFactor;
+          canvas.width = image.width;
+          canvas.height = image.height;
           const ctx = canvas.getContext("2d");
-          if (!ctx) continue;
+          if (!ctx) return;
 
-          ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+          ctx.drawImage(image, 0, 0);
+          URL.revokeObjectURL(objectUrl);
 
-          const cv = window.cv;
-          const src = cv.imread(canvas);
-          const dst = new cv.Mat();
+          const imageDataUrlToSend = canvas.toDataURL("image/jpeg", 0.9);
+          const processedPreview = img.original.preview;
 
-          cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY);
-          cv.GaussianBlur(dst, dst, new cv.Size(3, 3), 0);
-          cv.adaptiveThreshold(dst, dst, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 11, 2);
-
-          const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(2, 2));
-          cv.morphologyEx(dst, dst, cv.MORPH_CLOSE, kernel);
-          cv.dilate(dst, dst, kernel);
-          cv.erode(dst, dst, kernel);
-
-          cv.imshow(canvas, dst);
-
-          src.delete();
-          dst.delete();
-
-          // API call to /api/ocr
-          const ocrResponse = await fetch("/api/ocr", {
+          const response = await fetch("/api/ocr", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              image: canvas.toDataURL("image/png"),
-            }),
+            headers: {
+              "Content-Type": "application/json", 
+            },
+            body: JSON.stringify({ imageDataUrl: imageDataUrlToSend }),
           });
 
-          const textResp = await ocrResponse.text();
-            console.error("OCR server response:", textResp);
+            if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+          }
 
-          if (!ocrResponse.ok) throw new Error("Failed to get OCR result");
-
-          const { text } = await ocrResponse.json();
+          const data = await response.json();
+          const ocrText = data.ocrText
 
           setUploadedImages((prev) => {
             const updated = [...prev];
             updated[idx].processed = {
-              preview: canvas.toDataURL("image/png"),
-              ocrText: text,
+              preview: processedPreview,
+              ocrText: ocrText,
             };
             return updated;
           });
@@ -122,27 +89,26 @@ export default function ProcessStep() {
         } catch (err) {
           console.error("Failed to process image", err);
         }
-      }
-    };
+      };
 
-    runOCRBatch();
+      processImage();
+    });
   }, [cvReady, uploadedImages, setUploadedImages]);
 
   // Navigate to review page when done
   useEffect(() => {
-    const done =
-      uploadedImages.length > 0 &&
-      uploadedImages.every((img) => img.processed?.ocrText);
-
-    if (done) {
+    if (
+      totalImages > 0 &&
+      processedCount === totalImages &&
+      uploadedImages.every((img) => img.processed?.ocrText)
+    ) {
       router.push("/review");
     }
-  }, [uploadedImages, router]);
+  }, [processedCount, uploadedImages, totalImages, router]);
 
-  // Progress Bar
-  const totalImages = uploadedImages.length;
-  const completed = uploadedImages.filter((img) => img.processed?.ocrText).length;
-  const uploadProgress = totalImages ? Math.round((completed / totalImages) * 100) : 0;
+  const uploadProgress = totalImages
+    ? Math.round((processedCount / totalImages) * 100)
+    : 0;
 
   return (
     <div className="p-8">
@@ -173,3 +139,49 @@ export default function ProcessStep() {
     </div>
   );
 }
+
+/*
+const processImage = async () => {
+        const file = img.original.file;
+        const objectUrl = URL.createObjectURL(file);
+        const image = new Image();
+        image.src = objectUrl;
+
+        try {
+          await image.decode();
+
+          const canvas = document.createElement("canvas");
+          canvas.width = image.width;
+          canvas.height = image.height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+
+          ctx.drawImage(image, 0, 0);
+          URL.revokeObjectURL(objectUrl);
+
+          const cv = window.cv;
+          let src = cv.imread(canvas); 
+
+          let gray = new cv.Mat();
+          cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+
+          let denoisedGray = new cv.Mat();
+          cv.medianBlur(gray, denoisedGray, 3);
+          let binary = new cv.Mat();
+          cv.adaptiveThreshold(denoisedGray, binary, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 21, 0);
+
+          // --- Resize for display/OCR (as you had it) ---
+          const dsize = new cv.Size(canvas.width / 2, canvas.height / 2);
+          cv.resize(binary, binary, dsize, 0, 0, cv.INTER_AREA);
+
+          cv.imshow(canvas, binary);
+          const processedPreview = canvas.toDataURL("image/png");
+
+          src.delete();
+          gray.delete();
+          denoisedGray.delete();
+          binary.delete();
+
+
+          
+*/

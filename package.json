@@ -15,11 +15,13 @@
     "react-dom": "$react-dom"
   },
   "dependencies": {
+    "@google-cloud/vision": "^5.3.2",
     "@prisma/client": "^6.10.1",
     "@react-email/components": "^0.1.1",
     "@tailwindcss/typography": "^0.5.16",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
+    "dotenv": "^17.2.1",
     "formidable": "^3.5.4",
     "next": "15.3.3",
     "next-auth": "^5.0.0-beta.28",
