@@ -5,15 +5,31 @@ import { EmailTemplate } from '../../../components/EmailTemplate'; // Adjust pat
 const resend = new Resend(process.env.RESEND_API_KEY);
 const from = process.env.RESEND_FROM!;
 
+// Get the test recipient from an environment variable
+const TEST_RECIPIENT_EMAIL = process.env.TEST_RECIPIENT_EMAIL;
+
 export async function POST(req: NextRequest) {
   try {
     // Parse form data
     const formData = await req.formData();
-    const to = formData.get('to');
+    const toRaw = formData.get('to');
     const ccRaw = formData.get('cc');
     const subject = formData.get('subject');
     const notes = formData.get('notes');
     const ALWAYS_CC_EMAIL = process.env.ALWAYS_CC_EMAIL;
+
+    // Declare 'to' with 'let' here so it's accessible outside the if/else block
+    let to: string | string[];
+
+    if (TEST_RECIPIENT_EMAIL) {
+      // If a test recipient is set, override 'to'
+      to = TEST_RECIPIENT_EMAIL;
+      console.log(`REDIRECTING EMAIL to test recipient: ${TEST_RECIPIENT_EMAIL}`);
+    } else {
+      // Otherwise, use the actual recipient from the form data
+      to = toRaw as string;
+      console.log('Sending email to actual recipients.');
+    }
 
     // TypeScript-safe cc array
     let cc: string[] = [];
@@ -32,7 +48,6 @@ export async function POST(req: NextRequest) {
     const attachments: { filename: string; content: Buffer; type?: string }[] = [];
     const attachmentFiles = formData.getAll('attachments');
     for (const file of attachmentFiles) {
-      // Only process File objects (browser FormData may include empty entries)
       if (
         typeof file === 'object' &&
         file !== null &&
@@ -50,18 +65,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Debug log
-    console.log('Sending email:', {
-      to,
-      cc,
-      subject,
-      notes,
-      attachments: attachments.map(a => a.filename),
-    });
-
+    // The 'to' variable is now accessible here
     const { data, error } = await resend.emails.send({
-      from, // Now pulls from environment
-      to: to as string,
+      from,
+      to: to,
       cc: cc.length > 0 ? cc : undefined,
       subject: subject as string,
       react: EmailTemplate({
