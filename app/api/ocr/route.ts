@@ -13,9 +13,12 @@ try {
   } else {
     client = new ImageAnnotatorClient();
   }
-} catch (error) {
-  console.error("Failed to initialize Google Cloud Vision client:", error);
-  throw new Error("Cloud Vision client initialization failed.");
+} catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Failed to initialize Google Cloud Vision client:", error);
+    } else {
+      throw new Error("Cloud Vision client initialization failed. Unknown reason.");
+    }
 }
 
 
@@ -49,8 +52,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ocrText: fullText });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Google Cloud Vision API error:', error);
-    return NextResponse.json({ error: `OCR processing failed: ${error.message || 'Unknown error'}` }, { status: 500 });
+    return
   }
 }

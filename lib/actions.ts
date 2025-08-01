@@ -77,7 +77,7 @@ export async function auditSendEmail({
 
 //Mail info per client - only used in backend
 export type MailPayload = {
-  clientId: number | String;
+  clientId: number | string;
   images: { preview: string }[]; 
   files: File[];
   notes?: string;

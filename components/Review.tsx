@@ -11,15 +11,15 @@ import type { Client } from "./context"
 export default function ReviewPage() {
   const { companies, setCompanies } = useMail();
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [, setSelectedClient] = useState<Client | null>(null);
   const { uploadedImages, clientGroups, setClientGroups, setUploadedImages } = useMail();
   const [modalImageIdx, setModalImageIdx] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingClientId, setPendingClientId] = useState<number | null>(null);
-  const [matchingInProgress, setMatchingInProgress] = useState(false);
-  const [matchedCount, setMatchedCount] = useState(0);
+  const [matchingInProgress ] = useState(false);
+  const [matchedCount ] = useState(0);
 
   // Fetch companies on mount
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function ReviewPage() {
       }
     };
     fetchCompanies();
-  }, []);
+  }, [companies.length, setCompanies]);
 
   // Fetch selected client details
   useEffect(() => {
@@ -151,8 +151,12 @@ export default function ReviewPage() {
       );
 
       alert(`✅ Mail for ${freshClient.name} submitted and emailed!`);
-    } catch (err: any) {
-      alert(`❌ Failed to submit for client ${clientId}: ${err.message}`);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert(`❌ Failed to submit for client ${clientId}: ${err.message}`);
+      } else {
+        alert(`❌ Failed to submit for client ${clientId}: An unknown error occurred.`);
+      }
     } finally {
       setIsSubmitting(false);
       setUploadProgress(0);

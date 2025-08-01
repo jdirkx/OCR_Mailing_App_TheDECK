@@ -2,12 +2,13 @@
 
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     cv: any;
   }
 }
 
 import { useMail } from "./context";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function ProcessStep() {
@@ -152,5 +153,17 @@ export default function ProcessStep() {
     }
   }, [processedCount, uploadedImages, totalImages, router]);
   
-  // ... (rest of the component JSX)
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      <div className="text-center">
+        <h1 className="text-2xl font-semibold mb-2">Processing Images...</h1>
+        <p className="text-gray-600">
+          We&apos;re matching and processing your images. This might take a moment.
+        </p>
+        <p className="mt-4 text-lg font-bold">
+          Progress: {processedCount} / {totalImages}
+        </p>
+      </div>
+    </div>
+  );
 }

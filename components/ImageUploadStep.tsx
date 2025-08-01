@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 export default function ImageUploadStep() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const { uploadedImages, setUploadedImages, clearMail } = useMail();
+  const { uploadedImages, setUploadedImages } = useMail();
   const [modalImageIdx, setModalImageIdx] = useState<number | null>(null);
 
   // Handle file selection

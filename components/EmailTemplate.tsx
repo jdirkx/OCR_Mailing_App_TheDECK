@@ -1,4 +1,5 @@
 import * as React from 'react';
+import Image from "next/image";
 
 interface EmailTemplateProps {
   logoUrl: string;
@@ -28,7 +29,7 @@ export async function EmailTemplate({
       }}>
         {/* Logo at the top */}
         <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-          <img
+          <Image
             src={logoUrl}
             alt="The DECK Logo"
             style={{ maxWidth: '140px', height: 'auto', marginBottom: '10px' }}
