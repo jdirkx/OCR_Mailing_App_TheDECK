@@ -6,16 +6,10 @@ import { useMail } from "./context";
 import Select from "react-select";
 import { addMailForClient, getAllClients, getClientById } from "@/lib/actions";
 import type { MailPayload } from "@/lib/actions";
-
-type Client = {
-  id: number;
-  name: string;
-  primaryEmail: string;
-  secondaryEmails: string[];
-};
+import type { Client } from "./context" 
 
 export default function ReviewPage() {
-  const [companies, setCompanies] = useState<Client[]>([]);
+  const { companies, setCompanies } = useMail();
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const { uploadedImages, clientGroups, setClientGroups, setUploadedImages } = useMail();
@@ -24,6 +18,8 @@ export default function ReviewPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingClientId, setPendingClientId] = useState<number | null>(null);
+  const [matchingInProgress, setMatchingInProgress] = useState(false);
+  const [matchedCount, setMatchedCount] = useState(0);
 
   // Fetch companies on mount
   useEffect(() => {
@@ -56,8 +52,6 @@ export default function ReviewPage() {
     value: c.id,
     label: c.name,
   }));
-
-  //Insert ClientId assignment function
 
   // Group images by assignedClientId
   const groupedImages = uploadedImages.reduce((acc, image) => {
@@ -117,8 +111,12 @@ export default function ReviewPage() {
 
       const payload: MailPayload = {
         clientId,
-        images: images.map(img => ({ preview: img.original.preview })),
-        files: images.map((img) => img.original.file),
+          images: images.map((img) => ({
+          preview: img.resizedFile?.preview ?? img.original.preview,
+        })),
+        files: images
+          .map((img) => img.resizedFile?.file ?? img.original.file)
+          .filter((file): file is File => file !== undefined),
         notes: group.notes,
       };
 
@@ -191,9 +189,28 @@ export default function ReviewPage() {
   });    
 
 return (
+
   <div className="p-6">
     <h1 className="text-2xl font-bold mb-4">Review Uploaded Images</h1>
-
+      {/* --- REVISED Matching Overlay --- */}
+      {matchingInProgress && (
+        <div className="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50">
+          <div className="text-center">
+            <div className="text-xl font-semibold mb-4 text-gray-800">
+              🔍 Matching OCR Text to Clients...
+            </div>
+            <div className="w-64 mx-auto bg-gray-200 rounded-full h-4">
+              <div
+                className="bg-blue-500 h-4 rounded-full transition-all"
+                style={{ width: `${(matchedCount / uploadedImages.length) * 100 || 5}%` }}
+              ></div>
+            </div>
+            <p className="mt-2 text-gray-600">
+              {matchedCount} of {uploadedImages.length} images matched
+            </p>
+          </div>
+        </div>
+      )}
     {groupedEntries.map(([clientId, images]) => {
       const isSent = clientGroups.find(
         (g) => String(g.clientId) === String(clientId)
@@ -245,18 +262,12 @@ return (
                 title="Click to enlarge"
               >
                 <Image
-                  src={img.processed?.preview ?? img.original.preview}
+                  src={img.resizedFile?.preview ?? img.original.preview}
                   alt={`Client ${clientId} Image ${idx + 1}`}
                   width={150}
                   height={150}
                   className="object-cover w-36 h-36"
                 />
-              {/* TESTING - displays ocr test*/}
-              {img.processed?.ocrText && (
-                <div className="mt-2 p-2 bg-gray-100 rounded text-sm whitespace-pre-wrap">
-                  <strong>OCR Text:</strong> {img.processed.ocrText}
-                </div>
-              )}
               </div>
 
               
@@ -376,7 +387,7 @@ return (
                 placeholder="Search or select a Client..."
                 className="text-black"
                 isSearchable
-                value={
+                value={ 
                   clientOptions.find(
                     (opt) =>
                       opt.value === uploadedImages[modalImageIdx].assignedClientId
