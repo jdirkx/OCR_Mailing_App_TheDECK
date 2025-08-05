@@ -18,8 +18,7 @@ export default function ReviewPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingClientId, setPendingClientId] = useState<number | null>(null);
-  const [matchingInProgress ] = useState(false);
-  const [matchedCount ] = useState(0);
+
 
   // Fetch companies on mount
   useEffect(() => {
@@ -192,29 +191,24 @@ export default function ReviewPage() {
     return 0;
   });    
 
-return (
-
-  <div className="p-6">
-    <h1 className="text-2xl font-bold mb-4">Review Uploaded Images</h1>
-      {/* --- REVISED Matching Overlay --- */}
-      {matchingInProgress && (
-        <div className="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50">
-          <div className="text-center">
-            <div className="text-xl font-semibold mb-4 text-gray-800">
-              🔍 Matching OCR Text to Clients...
+  return (
+      <div className="p-6 pt-24">
+        {isSubmitting && (
+          <div className="w-full bg-gray-100 py-4 fixed top-0 left-0 right-0 z-50 shadow-md">
+            <div className="max-w-5xl mx-auto px-6">
+              <div className="mb-2 text-sm text-gray-700 font-medium">📤 Submitting mail...</div>
+              <div className="w-full bg-gray-300 rounded-full h-2.5">
+                <div
+                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                ></div>
+              </div>
             </div>
-            <div className="w-64 mx-auto bg-gray-200 rounded-full h-4">
-              <div
-                className="bg-blue-500 h-4 rounded-full transition-all"
-                style={{ width: `${(matchedCount / uploadedImages.length) * 100 || 5}%` }}
-              ></div>
-            </div>
-            <p className="mt-2 text-gray-600">
-              {matchedCount} of {uploadedImages.length} images matched
-            </p>
           </div>
-        </div>
-      )}
+        )}
+
+        <h1 className="text-2xl font-bold mb-4">Review Uploaded Images</h1>
+
     {groupedEntries.map(([clientId, images]) => {
       const isSent = clientGroups.find(
         (g) => String(g.clientId) === String(clientId)
@@ -243,16 +237,6 @@ return (
               </span>
             )}
           </h2>
-
-          {/* Progress bar */}
-          {isSubmitting && (
-            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-              <div
-                className="bg-blue-600 h-2.5 rounded-full"
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
-            </div>
-          )}
 
           {/* Image grid */}
           <div className="flex flex-wrap gap-4 mb-4">
@@ -450,14 +434,3 @@ return (
     </div>
   );
 }
-
-/*
-
-Displays OCR text
-
-{img.processed?.ocrText && (
-  <div className="mt-2 p-2 bg-gray-100 rounded text-sm whitespace-pre-wrap">
-    <strong>OCR Text:</strong> {img.processed.ocrText}
-  </div>
-)}
-*/
