@@ -342,16 +342,8 @@ export default function ReviewPage() {
             className="relative flex flex-col items-center bg-white p-4 rounded"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Image preview */}
-            <Image
-              src={uploadedImages[modalImageIdx].processed?.preview ?? uploadedImages[modalImageIdx].original.preview}
-              alt={`Enlarged preview ${modalImageIdx + 1}`}
-              width={800}
-              height={600}
-              className="max-h-[80vh] max-w-[80vw] rounded shadow-lg object-contain"
-            />
 
-            {/* Client selection below the image */}
+            {/* Client selection above the image */}
             <div className="my-4 w-80">
               <label className="block mb-1 font-medium text-gray-700">
                 Select Client
@@ -383,6 +375,16 @@ export default function ReviewPage() {
                 }
               />
             </div>
+
+
+            {/* Image preview */}
+            <Image
+              src={uploadedImages[modalImageIdx].processed?.preview ?? uploadedImages[modalImageIdx].original.preview}
+              alt={`Enlarged preview ${modalImageIdx + 1}`}
+              width={800}
+              height={600}
+              className="max-h-[80vh] max-w-[80vw] rounded shadow-lg object-contain"
+            />
 
             {/* Navigation arrows */}
             <div className="flex gap-4 mt-2">
