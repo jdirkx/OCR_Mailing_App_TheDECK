@@ -18,7 +18,9 @@ export default function ReviewPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingClientId, setPendingClientId] = useState<number | null>(null);
-
+  const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState(0);
+  const hasUnassignedImages = uploadedImages.some(img => img.assignedClientId === null);
 
   // Fetch companies on mount
   useEffect(() => {
@@ -73,6 +75,19 @@ export default function ReviewPage() {
       );
     }
 
+    // Remove an image by index
+      function removeImage(idx: number) {
+        setUploadedImages(prev => prev.filter((_, i) => i !== idx));
+        setModalImageIdx(current =>
+          current !== null && current === idx
+            ? null
+            : current !== null && current > idx
+              ? current - 1
+              : current
+        );
+      }
+
+
   // Update clientGroups when uploadedImages change, ensuring all clientIds exist
   useEffect(() => {
     const uniqueClientIds = Array.from(
@@ -95,7 +110,7 @@ export default function ReviewPage() {
   }, [uploadedImages, setClientGroups]);
 
 
-  async function submitClientGroup(clientId: string | number) {
+  async function submitClientGroup(clientId: string | number, silent = false) {
     setIsSubmitting(true);
     setUploadProgress(0);
     try {
@@ -148,8 +163,9 @@ export default function ReviewPage() {
             : group
         )
       );
-
+    if (!silent) {
       alert(`✅ Mail for ${freshClient.name} submitted and emailed!`);
+    }
     } catch (err: unknown) {
       if (err instanceof Error) {
         alert(`❌ Failed to submit for client ${clientId}: ${err.message}`);
@@ -160,6 +176,36 @@ export default function ReviewPage() {
       setIsSubmitting(false);
       setUploadProgress(0);
     }
+  }
+
+  // Send all unsent groups
+  async function sendAll() {
+    const unsentClientGroups = clientGroups.filter(g => !g.sent);
+    const total = unsentClientGroups.length;
+
+    if (total === 0) {
+      alert("✅ All client groups have already been submitted.");
+      return;
+    }
+
+    setIsBulkSubmitting(true);
+    setBulkProgress(0);
+
+    let completed = 0;
+
+    for (const group of unsentClientGroups) {
+      await submitClientGroup(group.clientId, true).catch(err => {
+        console.error(`Error submitting for ${group.clientId}:`, err);
+      });
+
+      completed += 1;
+      setBulkProgress(Math.round((completed / total) * 100));
+
+      await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5 sec delay
+    }
+
+    setIsBulkSubmitting(false);
+    alert("✅ All client groups have been submitted!");
   }
 
   // Send email with attachments
@@ -207,7 +253,28 @@ export default function ReviewPage() {
           </div>
         )}
 
-        <h1 className="text-2xl font-bold mb-4">Review Uploaded Images</h1>
+      <h1 className="text-2xl font-bold mb-4">Review Uploaded Images</h1>
+      {/* Send All Button */}
+      <div className="my-6">
+        <button
+          onClick={sendAll}
+          disabled={isBulkSubmitting || hasUnassignedImages}
+          className={`px-4 py-2 rounded font-semibold text-white ${
+            isBulkSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+        >
+          {isBulkSubmitting ? "Sending All..." : "📤 Send All"}
+        </button>
+
+        {isBulkSubmitting && (
+          <div className="mt-4 w-full bg-gray-200 h-4 rounded">
+            <div
+              className="bg-green-500 h-4 rounded transition-all duration-500 ease-in-out"
+              style={{ width: `${bulkProgress}%` }}
+            />
+          </div>
+        )}
+      </div>
 
     {groupedEntries.map(([clientId, images]) => {
       const isSent = clientGroups.find(
@@ -340,7 +407,22 @@ export default function ReviewPage() {
           <div
             className="relative flex flex-col items-center bg-white p-4 rounded"
             onClick={(e) => e.stopPropagation()}
+            
           >
+            {/* Remove Image Button */}
+            <button
+              type="button"
+              onClick={e => {
+                e.stopPropagation();
+                removeImage(modalImageIdx);
+              }}
+              className="absolute top-1 left-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-700"
+              aria-label="Remove image"
+              title="Remove"
+            >
+              &times;
+            </button>
+
             {/* Close Overlay Button*/}
             <button
               onClick={() => setModalImageIdx(null)}
