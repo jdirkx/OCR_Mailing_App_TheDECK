@@ -180,7 +180,13 @@ export default function ReviewPage() {
 
   // Send all unsent groups
   async function sendAll() {
-    const unsentClientGroups = clientGroups.filter(g => !g.sent);
+    const unsentClientGroups = clientGroups.filter(g => {
+      const clientId = g.clientId;
+      const validClient = clientId !== null && clientId !== 'UNASSIGNED';
+      const hasImages = uploadedImages.some(img => String(img.assignedClientId) === String(clientId));
+      return !g.sent && validClient && hasImages;
+    });
+
     const total = unsentClientGroups.length;
 
     if (total === 0) {
@@ -201,7 +207,7 @@ export default function ReviewPage() {
       completed += 1;
       setBulkProgress(Math.round((completed / total) * 100));
 
-      await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5 sec delay
+      await new Promise(resolve => setTimeout(resolve, 500)); // 0.5 sec delay between emails
     }
 
     setIsBulkSubmitting(false);
@@ -254,6 +260,7 @@ export default function ReviewPage() {
         )}
 
       <h1 className="text-2xl font-bold mb-4">Review Uploaded Images</h1>
+
       {/* Send All Button */}
       <div className="my-6">
         <button
@@ -420,7 +427,7 @@ export default function ReviewPage() {
               aria-label="Remove image"
               title="Remove"
             >
-              &times;
+              Remove Image
             </button>
 
             {/* Close Overlay Button*/}

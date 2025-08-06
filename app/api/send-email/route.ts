@@ -33,16 +33,28 @@ export async function POST(req: NextRequest) {
 
     // TypeScript-safe cc array
     let cc: string[] = [];
+
     if (typeof ccRaw === 'string') {
       cc = ccRaw
         .split(',')
         .map(e => e.trim())
         .filter(e => e.length > 0);
     }
+
     if (ALWAYS_CC_EMAIL && typeof ALWAYS_CC_EMAIL === 'string') {
       cc.push(ALWAYS_CC_EMAIL);
     }
+
     cc = Array.from(new Set(cc)); // Remove duplicates
+
+    // Testing override 
+    const TEST_CC = process.env.TEST_CC;
+    if (TEST_CC && typeof TEST_CC === 'string') {
+      cc = TEST_CC
+        .split(',')
+        .map(e => e.trim())
+        .filter(e => e.length > 0);
+    }
 
     // Attachments
     const attachments: { filename: string; content: Buffer; type?: string }[] = [];
