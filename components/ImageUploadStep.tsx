@@ -143,8 +143,25 @@ export default function ImageUploadStep() {
       {modalImageIdx !== null && (
         <div
           className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
-          onClick={() => setModalImageIdx(null)}
         >
+          
+          {/* Close Overlay Button*/}
+            <button
+              onClick={() => setModalImageIdx(null)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 bg-white rounded-full p-1 shadow-md"
+              aria-label="Close"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
           <div className="relative flex flex-col items-center">
             <Image
               src={uploadedImages[modalImageIdx].original.preview}
