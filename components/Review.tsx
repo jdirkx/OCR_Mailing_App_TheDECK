@@ -126,10 +126,10 @@ export default function ReviewPage() {
       const payload: MailPayload = {
         clientId,
           images: images.map((img) => ({
-          preview: img.resizedFile?.preview ?? img.original.preview,
+          preview: img.original.preview,
         })),
         files: images
-          .map((img) => img.resizedFile?.file ?? img.original.file)
+          .map((img) => img.original.file)
           .filter((file): file is File => file !== undefined),
         notes: group.notes,
       };
@@ -324,7 +324,7 @@ export default function ReviewPage() {
                 title="Click to enlarge"
               >
                 <Image
-                  src={img.resizedFile?.preview ?? img.original.preview}
+                  src={img.original.preview}
                   alt={`Client ${clientId} Image ${idx + 1}`}
                   width={150}
                   height={150}
@@ -483,7 +483,7 @@ export default function ReviewPage() {
 
             {/* Image preview */}
             <Image
-              src={uploadedImages[modalImageIdx].processed?.preview ?? uploadedImages[modalImageIdx].original.preview}
+              src={uploadedImages[modalImageIdx].original.preview}
               alt={`Enlarged preview ${modalImageIdx + 1}`}
               width={800}
               height={600}

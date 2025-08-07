@@ -3,8 +3,11 @@
 import React, { useRef, useState } from "react";
 import Image from "next/image";
 import { useMail } from "./context";
+import type { UploadedImage } from "./context";
 import { useRouter } from "next/navigation";
 import imageCompression from 'browser-image-compression';
+import heic2any from "heic2any";
+
 
 export default function ImageUploadStep() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -14,46 +17,62 @@ export default function ImageUploadStep() {
 
   // Handle file selection
   async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!e.target.files) return;
-    const filesArray = Array.from(e.target.files);
+  if (!e.target.files) return;
 
-    // Compress Images
-    const compressedImages = await Promise.all(
-      filesArray.map(async (file) => {
-        const options = {
-          maxSizeMB: 0.2,
-          maxWidthOrHeight: 1000,
-          useWebWorker: true,
-        };
+  const filesArray = Array.from(e.target.files);
 
+  const compressedImages = await Promise.all(
+    filesArray.map(async (file) => {
+      let convertedFile = file;
+
+      // Detect and convert HEIC
+      if (file.type === "image/heic" || file.type === "image/heif") {
         try {
-          const compressedFile = await imageCompression(file, options);
+          const blob = await heic2any({ blob: file, toType: "image/jpeg" });
 
-          return {
-            id: crypto.randomUUID(),
-            text: "",
-            original: {
-              file,
-              preview: URL.createObjectURL(file),
-            },
-            resizedFile: {
-              file: compressedFile,
-              preview: URL.createObjectURL(compressedFile),
-            },
-            processed: undefined,
-            assignedClientId: null,
-            sent: false,
-          };
+          // heic2any returns a Blob or Blob[]
+          convertedFile = new File(
+            [blob as Blob],
+            file.name.replace(/\.[^/.]+$/, ".jpg"),
+            { type: "image/jpeg" }
+          );
+          console.log("🔄 Converted HEIC to JPEG:", convertedFile);
         } catch (err) {
-          console.error("Compression failed for", file.name, err);
+          console.error("❌ HEIC conversion failed:", err);
           return null;
+        }
+      }
+
+      // Now compress the image (converted or not)
+      try {
+        const compressedFile = await imageCompression(convertedFile, {
+          maxSizeMB: 0.1,
+          maxWidthOrHeight: 900,
+          useWebWorker: true,
+        });
+
+        console.log(`✅ Compressed image "${file.name}"`);
+        console.log(`- Size: ${(compressedFile.size / 1024).toFixed(2)} KB`);
+
+        return {
+          id: crypto.randomUUID(),
+          text: "",
+          original: {
+            file: compressedFile,
+            preview: URL.createObjectURL(compressedFile),
+          },
+          processed: undefined,
+          assignedClientId: null,
+          sent: false,
+        };
+      } catch (err) {
+        console.error("❌ Compression failed:", err);
         }
       })
     );
 
-    const successfulUploads = compressedImages.filter(Boolean) as NonNullable<typeof compressedImages[number]>[];
-
-    setUploadedImages((prev) => [...prev, ...successfulUploads]);
+    const successful = compressedImages.filter(Boolean) as UploadedImage[];
+    setUploadedImages(prev => [...prev, ...successful]);
   }
 
   // Remove an image by index
@@ -61,7 +80,6 @@ export default function ImageUploadStep() {
     setUploadedImages(prev => {
       const img = prev[idx];
       if (img.original?.preview) URL.revokeObjectURL(img.original.preview);
-      if (img.resizedFile?.preview) URL.revokeObjectURL(img.resizedFile.preview);
       return prev.filter((_, i) => i !== idx);
     });
 

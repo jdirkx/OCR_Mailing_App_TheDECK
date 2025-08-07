@@ -7,11 +7,9 @@ import { useRouter } from "next/navigation";
 export default function ProcessStep() {
   const router = useRouter();
   const { uploadedImages, setUploadedImages, companies } = useMail();
-  const [processedCount, setProcessedCount] = useState(0);
   const [hasProcessed, setHasProcessed] = useState(false);
   const totalImages = uploadedImages.length;
 
-  // Process images and assign client IDs
   useEffect(() => {
     if (uploadedImages.length === 0 || hasProcessed || companies.length === 0) return;
 
@@ -19,7 +17,6 @@ export default function ProcessStep() {
       const updatedImages = await Promise.all(
         uploadedImages.map(async (img) => {
           if (img.processed?.ocrText && img.assignedClientId !== null) {
-            setProcessedCount((prev) => prev + 1);
             return img;
           }
 
@@ -31,32 +28,16 @@ export default function ProcessStep() {
           try {
             await image.decode();
 
-            // Resize
-            const MAX_DIMENSION = 1000;
-            const scale = Math.min(1, MAX_DIMENSION / Math.max(image.width, image.height));
-            const newWidth = Math.round(image.width * scale);
-            const newHeight = Math.round(image.height * scale);
-
             const canvas = document.createElement("canvas");
-            canvas.width = newWidth;
-            canvas.height = newHeight;
-            const ctx = canvas.getContext("2d");
-            if (!ctx) return img;
+            canvas.width = image.width;
+            canvas.height = image.height;
 
-            ctx.drawImage(image, 0, 0, newWidth, newHeight);
+            const ctx = canvas.getContext("2d");
+            if (!ctx) throw new Error("Canvas context not available");
+
+            ctx.drawImage(image, 0, 0);
             URL.revokeObjectURL(objectUrl);
 
-            // Convert canvas to blob for resized file
-            const resizedBlob = await new Promise<Blob>((resolve, reject) =>
-              canvas.toBlob((blob) => {
-                if (blob) resolve(blob);
-                else reject(new Error("Failed to create blob from canvas."));
-              }, "image/jpeg", 0.9)
-            );
-            const resizedFile = new File([resizedBlob], `resized-${file.name}`, { type: "image/jpeg" });
-            const resizedPreview = canvas.toDataURL("image/jpeg", 0.9);
-
-            // OCR
             const imageDataUrlToSend = canvas.toDataURL("image/jpeg", 0.9);
             const response = await fetch("/api/ocr", {
               method: "POST",
@@ -82,18 +63,13 @@ export default function ProcessStep() {
                 break;
               }
             }
-
-            setProcessedCount((prev) => prev + 1);
-
             return {
               ...img,
-              processed: { preview: img.original.preview, ocrText },
-              resizedFile: { file: resizedFile, preview: resizedPreview },
+              processed: { ocrText },
               assignedClientId,
             };
           } catch (err) {
             console.error("Failed to process image", err);
-            setProcessedCount((prev) => prev + 1);
             return img;
           }
         })
@@ -106,16 +82,16 @@ export default function ProcessStep() {
     processAllImages();
   }, [uploadedImages, hasProcessed, companies, setUploadedImages]);
 
-  // Navigate to review page when done
   useEffect(() => {
-    if (
-      totalImages > 0 &&
-      processedCount === totalImages &&
-      uploadedImages.every((img) => img.processed?.ocrText)
-    ) {
+    if (!hasProcessed) return;
+
+    const allProcessed = uploadedImages.length > 0 &&
+      uploadedImages.every((img) => img.processed?.ocrText);
+
+    if (allProcessed) {
       router.push("/review");
     }
-  }, [processedCount, uploadedImages, totalImages, router]);
+  }, [hasProcessed, uploadedImages, router]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
@@ -125,7 +101,7 @@ export default function ProcessStep() {
           We&apos;re matching and processing your images. This might take a moment.
         </p>
         <p className="mt-4 text-lg font-bold">
-          Progress: {processedCount} / {totalImages}
+            Progress: {uploadedImages.filter(img => img.processed?.ocrText).length} / {totalImages}
         </p>
       </div>
     </div>

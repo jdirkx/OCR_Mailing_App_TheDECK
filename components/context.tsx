@@ -11,14 +11,9 @@ export type UploadedImage = {
     file: File;
   };
   processed?: {
-    preview?: string;
     ocrText?: string;
   };
   assignedClientId: number | null;
-  resizedFile?: {
-    preview?: string;
-    file?: File;
-  };
   sent: boolean;
 };
 
