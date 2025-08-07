@@ -4,6 +4,7 @@ import React, { useRef, useState } from "react";
 import Image from "next/image";
 import { useMail } from "./context";
 import { useRouter } from "next/navigation";
+import imageCompression from 'browser-image-compression';
 
 export default function ImageUploadStep() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -12,29 +13,58 @@ export default function ImageUploadStep() {
   const [modalImageIdx, setModalImageIdx] = useState<number | null>(null);
 
   // Handle file selection
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.files) {
-      const filesArray = Array.from(e.target.files);
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!e.target.files) return;
+    const filesArray = Array.from(e.target.files);
 
-      const uploadedImages = filesArray.map(file => ({
-        id: crypto.randomUUID(),
-        text: "",
-        original: {
-          file,
-          preview: URL.createObjectURL(file),
-        },
-        processed: undefined,
-        assignedClientId: null,
-        sent: false
-      }));
+    // Compress Images
+    const compressedImages = await Promise.all(
+      filesArray.map(async (file) => {
+        const options = {
+          maxSizeMB: 0.2,
+          maxWidthOrHeight: 1000,
+          useWebWorker: true,
+        };
 
-      setUploadedImages(prev => [...prev, ...uploadedImages]);
-    }
+        try {
+          const compressedFile = await imageCompression(file, options);
+
+          return {
+            id: crypto.randomUUID(),
+            text: "",
+            original: {
+              file,
+              preview: URL.createObjectURL(file),
+            },
+            resizedFile: {
+              file: compressedFile,
+              preview: URL.createObjectURL(compressedFile),
+            },
+            processed: undefined,
+            assignedClientId: null,
+            sent: false,
+          };
+        } catch (err) {
+          console.error("Compression failed for", file.name, err);
+          return null;
+        }
+      })
+    );
+
+    const successfulUploads = compressedImages.filter(Boolean) as NonNullable<typeof compressedImages[number]>[];
+
+    setUploadedImages((prev) => [...prev, ...successfulUploads]);
   }
 
   // Remove an image by index
   function removeImage(idx: number) {
-    setUploadedImages(prev => prev.filter((_, i) => i !== idx));
+    setUploadedImages(prev => {
+      const img = prev[idx];
+      if (img.original?.preview) URL.revokeObjectURL(img.original.preview);
+      if (img.resizedFile?.preview) URL.revokeObjectURL(img.resizedFile.preview);
+      return prev.filter((_, i) => i !== idx);
+    });
+
     setModalImageIdx(current =>
       current !== null && current === idx
         ? null

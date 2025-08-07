@@ -221,7 +221,7 @@ export default function ReviewPage() {
       formData.append("attachments", file);
     });
     formData.append("to", toEmail);
-    formData.append("subject", `Your mail has arrived at The DECK`);
+    formData.append("subject", `新しい郵便物がThe DECKに到着しました。`);
     formData.append("notes", notes);
 
     if (ccEmails.length > 0) {
