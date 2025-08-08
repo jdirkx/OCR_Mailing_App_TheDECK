@@ -281,7 +281,7 @@ export default function ReviewPage() {
           <div className="w-full bg-red-100 py-4 fixed top-0 left-0 right-0 z-50 shadow-md">
             <div className="max-w-5xl mx-auto px-6">
               <div className="mb-2 text-sm text-black-700 font-medium text-center">
-                AT LEAST ONE GROUP'S IMAGES EXCEED 1MB IN TOTAL
+                AT LEAST ONE GROUP&apos;S IMAGES EXCEED 1MB IN TOTAL
               </div>
             </div>
           </div>
