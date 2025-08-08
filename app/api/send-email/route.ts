@@ -5,8 +5,9 @@ import { EmailTemplate } from '../../../components/EmailTemplate'; // Adjust pat
 const resend = new Resend(process.env.RESEND_API_KEY);
 const from = process.env.RESEND_FROM!;
 
-// Get the test recipient from an environment variable
+// Test recipient and cc override 
 const TEST_RECIPIENT_EMAIL = process.env.TEST_RECIPIENT_EMAIL;
+const ALWAYS_CC_EMAIL = process.env.ALWAYS_CC_EMAIL;
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +17,6 @@ export async function POST(req: NextRequest) {
     const ccRaw = formData.get('cc');
     const subject = formData.get('subject');
     const notes = formData.get('notes');
-    const ALWAYS_CC_EMAIL = process.env.ALWAYS_CC_EMAIL;
 
     // Declare 'to' with 'let' here so it's accessible outside the if/else block
     let to: string | string[];
@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
         'type' in file &&
         (file as File).size > 0
       ) {
+        console.log(`- Received File Name: ${(file as File).name}, File Type: ${(file as File).type}`);
         const buffer = Buffer.from(await (file as File).arrayBuffer());
         attachments.push({
           filename: (file as File).name,

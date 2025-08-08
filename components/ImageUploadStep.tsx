@@ -14,11 +14,12 @@ export default function ImageUploadStep() {
   const router = useRouter();
   const { uploadedImages, setUploadedImages } = useMail();
   const [modalImageIdx, setModalImageIdx] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
 
   // Handle file selection
   async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
   if (!e.target.files) return;
-
+  setLoading(true);
   const filesArray = Array.from(e.target.files);
 
   const compressedImages = await Promise.all(
@@ -51,15 +52,14 @@ export default function ImageUploadStep() {
           useWebWorker: true,
         });
 
-        console.log(`✅ Compressed image "${file.name}"`);
-        console.log(`- Size: ${(compressedFile.size / 1024).toFixed(2)} KB`);
+        const previewUrl = URL.createObjectURL(compressedFile);
 
         return {
           id: crypto.randomUUID(),
           text: "",
           original: {
             file: compressedFile,
-            preview: URL.createObjectURL(compressedFile),
+            preview: previewUrl,
           },
           processed: undefined,
           assignedClientId: null,
@@ -73,6 +73,7 @@ export default function ImageUploadStep() {
 
     const successful = compressedImages.filter(Boolean) as UploadedImage[];
     setUploadedImages(prev => [...prev, ...successful]);
+    setLoading(false);
   }
 
   // Remove an image by index
@@ -108,27 +109,37 @@ export default function ImageUploadStep() {
           Upload Your Photos
         </h1>
 
-        {/* File Picker */}
-        <div className="mb-6 flex flex-col items-center">
-          <button
-            type="button"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition mb-2"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            Choose Images
-          </button>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImageChange}
-            ref={fileInputRef}
-            className="hidden"
-          />
-          <p className="text-sm text-gray-500">
-            You can select multiple images from your gallery.
-          </p>
-        </div>
+      {/* File Picker */}
+      <div className="mb-6 flex flex-col items-center">
+        <button
+          type="button"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition mb-2"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={loading}
+        >
+          {loading ? "Uploading..." : "Choose Images"}
+        </button>
+
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleImageChange}
+          ref={fileInputRef}
+          className="hidden"
+        />
+
+        {loading && (
+          <div className="mt-2">
+            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-600"></div>
+          </div>
+        )}
+
+        <p className="text-sm text-gray-500 mt-2">
+          You can select multiple images from your gallery.
+        </p>
+      </div>
+
 
         {/* Image Previews */}
         {uploadedImages.length > 0 && (

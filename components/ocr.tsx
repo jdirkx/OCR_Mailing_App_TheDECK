@@ -12,14 +12,12 @@ export default function ProcessStep() {
 
   useEffect(() => {
     if (uploadedImages.length === 0 || hasProcessed || companies.length === 0) return;
-
     const processAllImages = async () => {
       const updatedImages = await Promise.all(
         uploadedImages.map(async (img) => {
           if (img.processed?.ocrText && img.assignedClientId !== null) {
             return img;
           }
-
           const file = img.original.file;
           const objectUrl = URL.createObjectURL(file);
           const image = new Image();
@@ -27,7 +25,6 @@ export default function ProcessStep() {
 
           try {
             await image.decode();
-
             const canvas = document.createElement("canvas");
             canvas.width = image.width;
             canvas.height = image.height;
@@ -37,14 +34,12 @@ export default function ProcessStep() {
 
             ctx.drawImage(image, 0, 0);
             URL.revokeObjectURL(objectUrl);
-
             const imageDataUrlToSend = canvas.toDataURL("image/jpeg", 0.9);
             const response = await fetch("/api/ocr", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ imageDataUrl: imageDataUrlToSend }),
             });
-
             if (!response.ok) {
               const errorData = await response.json();
               throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -52,7 +47,6 @@ export default function ProcessStep() {
 
             const data = await response.json();
             const ocrText = data.ocrText;
-
             // Match to client
             let assignedClientId = null;
             const strippedOcrText = ocrText.toLowerCase().replace(/\s/g, "");
@@ -74,7 +68,6 @@ export default function ProcessStep() {
           }
         })
       );
-
       setUploadedImages(updatedImages);
       setHasProcessed(true);
     };
@@ -83,10 +76,9 @@ export default function ProcessStep() {
   }, [uploadedImages, hasProcessed, companies, setUploadedImages]);
 
   useEffect(() => {
-    if (!hasProcessed) return;
-
     const allProcessed = uploadedImages.length > 0 &&
-      uploadedImages.every((img) => img.processed?.ocrText);
+      hasProcessed &&
+      uploadedImages.some(img => img.processed?.ocrText);
 
     if (allProcessed) {
       router.push("/review");

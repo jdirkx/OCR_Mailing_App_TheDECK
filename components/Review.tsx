@@ -17,6 +17,7 @@ export default function ReviewPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showConfirmAll, setShowConfirmAll] = useState(false);
   const [pendingClientId, setPendingClientId] = useState<number | null>(null);
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
   const [bulkProgress, setBulkProgress] = useState(0);
@@ -218,10 +219,10 @@ export default function ReviewPage() {
   async function sendEmailWithAttachments(files: File[], notes: string, toEmail: string, ccEmails: string[]) {
     const formData = new FormData();
     files.forEach(file => {
-      formData.append("attachments", file);
+      formData.append("attachments", file, file.name);
     });
     formData.append("to", toEmail);
-    formData.append("subject", `新しい郵便物がThe DECKに到着しました。`);
+    formData.append("subject", `新しい郵便物が届きました。`);
     formData.append("notes", notes);
 
     if (ccEmails.length > 0) {
@@ -264,7 +265,9 @@ export default function ReviewPage() {
       {/* Send All Button */}
       <div className="my-6">
         <button
-          onClick={sendAll}
+          onClick={() => {
+              setShowConfirmAll(true);
+            }}
           disabled={isBulkSubmitting || hasUnassignedImages}
           className={`px-4 py-2 rounded font-semibold text-white ${
             isBulkSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
@@ -282,6 +285,36 @@ export default function ReviewPage() {
           </div>
         )}
       </div>
+
+      {/* Confirmation Overlay [All] */}
+      {showConfirmAll && (
+      <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+          <h2 className="text-xl font-semibold mb-4">Confirm Submission</h2>
+          <p className="mb-6">Are you sure you want to submit all mail?</p>
+          <div className="flex justify-center gap-4">
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+              onClick={async () => {
+                setShowConfirmAll(false);
+                await sendAll();
+                }
+              }
+            >
+              Yes, Submit
+            </button>
+            <button
+              className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition"
+              onClick={() => {
+                setShowConfirm(false);
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+      )}
 
     {groupedEntries.map(([clientId, images]) => {
       const isSent = clientGroups.find(
@@ -423,11 +456,11 @@ export default function ReviewPage() {
                 e.stopPropagation();
                 removeImage(modalImageIdx);
               }}
-              className="absolute top-1 left-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-700"
+              className="absolute top-1 left-1 focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-2 focus:ring-red-300 font-medium rounded text-xs px-2 py-1 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
               aria-label="Remove image"
               title="Remove"
             >
-              Remove Image
+              Remove
             </button>
 
             {/* Close Overlay Button*/}
