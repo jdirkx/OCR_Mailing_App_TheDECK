@@ -22,6 +22,7 @@ export default function ReviewPage() {
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
   const [bulkProgress, setBulkProgress] = useState(0);
   const hasUnassignedImages = uploadedImages.some(img => img.assignedClientId === null);
+  const hasOverSizeGroups = clientGroups.some((group) => group.totalSize > 1024 * 1024);
 
   // Fetch companies on mount
   useEffect(() => {
@@ -95,15 +96,31 @@ export default function ReviewPage() {
       new Set(uploadedImages.map((img) => img.assignedClientId ?? "UNASSIGNED"))
     );
 
+    // Calculate size to display for users - cannot exceed 1MB for email API
+    const totalSizeMap = new Map<string | number, number>();
+    uploadedImages.forEach(img => {
+      const clientId = img.assignedClientId ?? "UNASSIGNED";
+      const currentSize = totalSizeMap.get(clientId) ?? 0;
+      const fileSize = img.original.file.size;
+      totalSizeMap.set(clientId, currentSize + fileSize);
+    });
+
     setClientGroups((prevGroups) => {
       const groupMap = new Map(prevGroups.map((g) => [g.clientId, g]));
       uniqueClientIds.forEach((clientId) => {
+        const totalSize = totalSizeMap.get(clientId) ?? 0;
         if (!groupMap.has(clientId)) {
           groupMap.set(clientId, {
             clientId,
+            totalSize,
             notes: "",
             sent: false,
           });
+        } else {
+          const existingGroup = groupMap.get(clientId);
+          if (existingGroup) {
+            groupMap.set(clientId, { ...existingGroup, totalSize });
+          }
         }
       });
       return Array.from(groupMap.values());
@@ -260,6 +277,16 @@ export default function ReviewPage() {
           </div>
         )}
 
+        {hasOverSizeGroups && (
+          <div className="w-full bg-red-100 py-4 fixed top-0 left-0 right-0 z-50 shadow-md">
+            <div className="max-w-5xl mx-auto px-6">
+              <div className="mb-2 text-sm text-black-700 font-medium text-center">
+                AT LEAST ONE GROUP'S IMAGES EXCEED 1MB IN TOTAL
+              </div>
+            </div>
+          </div>
+        )}
+
       <h1 className="text-2xl font-bold mb-4">Review Uploaded Images</h1>
 
       {/* Send All Button */}
@@ -268,7 +295,7 @@ export default function ReviewPage() {
           onClick={() => {
               setShowConfirmAll(true);
             }}
-          disabled={isBulkSubmitting || hasUnassignedImages}
+          disabled={isBulkSubmitting || hasUnassignedImages || hasOverSizeGroups}
           className={`px-4 py-2 rounded font-semibold text-white ${
             isBulkSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
           }`}
@@ -332,15 +359,24 @@ export default function ReviewPage() {
               : "bg-white text-gray-800"
           }`}
         >
-          {/* Heading with "Sent" badge */}
+          {/* Heading */}
           <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
             {clientId === "UNASSIGNED"
               ? "⚠️ Unassigned Images"
               : companies.find((c) => c.id === Number(clientId))?.name ??
-                `Client ${clientId}`}
+                `Client ${clientId} | ${((clientGroups.find(
+                (g) => String(g.clientId) === String(clientId)
+              )?.totalSize ?? 0) / (1024 * 1024)).toFixed(2)} / 1 MB`}
             {isSent && (
               <span className="px-2 py-1 text-sm bg-green-200 text-green-800 rounded-full">
                 ✅ Sent
+              </span>
+            )}
+            {((clientGroups.find(
+                (g) => String(g.clientId) === String(clientId)
+              )?.totalSize ?? 0) > (1024 * 1024)) && (
+              <span className="px-2 py-1 text-sm bg-red-700 text-white-800 rounded-full">
+                Total size of images exceeds 1MB
               </span>
             )}
           </h2>
@@ -364,8 +400,6 @@ export default function ReviewPage() {
                   className="object-cover w-36 h-36"
                 />
               </div>
-
-              
             ))}
           </div>
 
@@ -391,7 +425,11 @@ export default function ReviewPage() {
           {clientId !== "UNASSIGNED" && !isSent && (
             <button
               className="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              disabled={isSubmitting}
+              disabled={isSubmitting ||
+                (clientGroups.find(
+                (g) => String(g.clientId) === String(clientId)
+                )?.totalSize ?? 0) > 1024 * 1024 
+              }
               onClick={() => {
                 setPendingClientId(Number(clientId));
                 setShowConfirm(true);

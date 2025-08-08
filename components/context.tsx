@@ -19,6 +19,7 @@ export type UploadedImage = {
 
 export type ClientGroup = {
   clientId: number | string;
+  totalSize: number;
   notes: string;
   sent: boolean;
 };
