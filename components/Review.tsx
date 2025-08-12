@@ -309,31 +309,43 @@ export default function ReviewPage() {
 
       <h1 className="text-2xl font-bold mb-4">Review Uploaded Images</h1>
 
-      <div className="flex items-center justify-between my-6">
-        {/* Send All Button */}
-        <button
-          onClick={() => {
-            setShowConfirmAll(true);
-          }}
-          disabled={isBulkSubmitting || hasUnassignedImages || hasOverSizeGroups}
-          className={`px-4 py-2 rounded font-semibold text-white ${
-            isBulkSubmitting
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
-          }`}
-        >
-          {isBulkSubmitting ? "Sending All..." : "📤 Send All"}
-        </button>
+      <div>
+        <div className="flex items-center justify-between my-6">
+          {/* Send All Button */}
+          <button
+            onClick={() => {
+              setShowConfirmAll(true);
+            }}
+            disabled={isBulkSubmitting || hasUnassignedImages || hasOverSizeGroups}
+            className={`px-4 py-2 rounded font-semibold text-white ${
+              isBulkSubmitting
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
+          >
+            {isBulkSubmitting ? "Sending All..." : "📤 Send All"}
+          </button>
 
-        {/* Clear Images Button */}
-        <button
-          onClick={() => {
-            setClearing(true);
-          }}
-          className="px-4 py-2 rounded font-semibold text-white bg-red-500 hover:bg-red-600"
-        >
-          Clear Images
-        </button>
+          {/* Clear Images Button */}
+          <button
+            onClick={() => {
+              setClearing(true);
+            }}
+            className="px-4 py-2 rounded font-semibold text-white bg-red-500 hover:bg-red-600"
+          >
+            Clear Images
+          </button>
+        </div>
+  
+        {/* Bulk Progress Bar */}
+        {isBulkSubmitting && (
+          <div className="mt-4 w-full bg-gray-200 h-4 rounded">
+            <div
+              className="bg-green-500 h-4 rounded transition-all duration-500 ease-in-out"
+              style={{ width: `${bulkProgress}%` }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Confirmation Overlay [All] */}
