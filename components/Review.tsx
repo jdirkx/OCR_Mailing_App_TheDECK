@@ -243,7 +243,7 @@ export default function ReviewPage() {
       formData.append("attachments", file, file.name);
     });
     formData.append("to", toEmail);
-    formData.append("subject", `新しい郵便物が届きました。`);
+    formData.append("subject", `新しい郵便物が届きました_The DECK株式会社`);
     formData.append("notes", notes);
 
     if (ccEmails.length > 0) {
