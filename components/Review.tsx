@@ -7,6 +7,7 @@ import Select from "react-select";
 import { addMailForClient, getAllClients, getClientById } from "@/lib/actions";
 import type { MailPayload } from "@/lib/actions";
 import type { Client } from "./context" 
+import { useRouter } from "next/navigation";
 
 export default function ReviewPage() {
   const { companies, setCompanies } = useMail();
@@ -20,9 +21,12 @@ export default function ReviewPage() {
   const [showConfirmAll, setShowConfirmAll] = useState(false);
   const [pendingClientId, setPendingClientId] = useState<number | null>(null);
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [bulkProgress, setBulkProgress] = useState(0);
+  const [clearing, setClearing] = useState(false);
+  const router = useRouter();
   const hasUnassignedImages = uploadedImages.some(img => img.assignedClientId === null);
-  const hasOverSizeGroups = clientGroups.some((group) => group.totalSize > 1024 * 1024);
+  const hasOverSizeGroups = clientGroups.some((group) => group.clientId !== "UNASSIGNED" && group.totalSize > 1024 * 1024);
 
   // Fetch companies on mount
   useEffect(() => {
@@ -254,6 +258,22 @@ export default function ReviewPage() {
     return await response.json();
   }
 
+  async function clearAll(){
+    setClientGroups([]);
+    setUploadedImages([]);
+
+    setIsSubmitting(false);
+    setIsBulkSubmitting(false);
+    setShowConfirm(false);
+    setShowConfirmAll(false);
+    setSelectedClient(null);
+
+    setUploadProgress(0);
+    setBulkProgress(0);
+
+    router.push("/mail-upload")
+  }
+
   // Sort groups: put UNASSIGNED on top
   const groupedEntries = Object.entries(groupedImages).sort(([a], [b]) => {
     if (a === "UNASSIGNED") return -1;
@@ -289,28 +309,31 @@ export default function ReviewPage() {
 
       <h1 className="text-2xl font-bold mb-4">Review Uploaded Images</h1>
 
-      {/* Send All Button */}
-      <div className="my-6">
+      <div className="flex items-center justify-between my-6">
+        {/* Send All Button */}
         <button
           onClick={() => {
-              setShowConfirmAll(true);
-            }}
+            setShowConfirmAll(true);
+          }}
           disabled={isBulkSubmitting || hasUnassignedImages || hasOverSizeGroups}
           className={`px-4 py-2 rounded font-semibold text-white ${
-            isBulkSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+            isBulkSubmitting
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
           }`}
         >
           {isBulkSubmitting ? "Sending All..." : "📤 Send All"}
         </button>
 
-        {isBulkSubmitting && (
-          <div className="mt-4 w-full bg-gray-200 h-4 rounded">
-            <div
-              className="bg-green-500 h-4 rounded transition-all duration-500 ease-in-out"
-              style={{ width: `${bulkProgress}%` }}
-            />
-          </div>
-        )}
+        {/* Clear Images Button */}
+        <button
+          onClick={() => {
+            setClearing(true);
+          }}
+          className="px-4 py-2 rounded font-semibold text-white bg-red-500 hover:bg-red-600"
+        >
+          Clear Images
+        </button>
       </div>
 
       {/* Confirmation Overlay [All] */}
@@ -333,7 +356,7 @@ export default function ReviewPage() {
             <button
               className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition"
               onClick={() => {
-                setShowConfirm(false);
+                setShowConfirmAll(false);
               }}
             >
               Cancel
@@ -342,6 +365,38 @@ export default function ReviewPage() {
         </div>
       </div>
       )}
+
+      {/* Confirmation for Clear */}
+
+      {clearing && (
+      <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+          <h2 className="text-xl font-semibold mb-4">Confirm Clearing</h2>
+          <p className="mb-6">Are you sure you want to clear all images?</p>
+          <div className="flex justify-center gap-4">
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+              onClick={async () => {
+                setClearing(false);
+                await clearAll();
+                }
+              }
+            >
+              Yes, Clear All
+            </button>
+            <button
+              className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition"
+              onClick={() => {
+                setClearing(false);
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+      )}
+
 
     {groupedEntries.map(([clientId, images]) => {
       const isSent = clientGroups.find(

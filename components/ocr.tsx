@@ -1,23 +1,32 @@
 "use client";
 
 import { useMail } from "./context";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function ProcessStep() {
   const router = useRouter();
   const { uploadedImages, setUploadedImages, companies } = useMail();
-  const [hasProcessed, setHasProcessed] = useState(false);
   const totalImages = uploadedImages.length;
 
+  // Combine processing and navigation into a single effect
   useEffect(() => {
-    if (uploadedImages.length === 0 || hasProcessed || companies.length === 0) return;
+    if (uploadedImages.length === 0 || uploadedImages.every(img => img.processed) || companies.length === 0) {
+      // If all images are processed, navigate to the review page.
+      if (uploadedImages.length > 0 && uploadedImages.every(img => img.processed)) {
+        router.push("/review");
+      }
+      return;
+    }
+
     const processAllImages = async () => {
       const updatedImages = await Promise.all(
         uploadedImages.map(async (img) => {
+          // If the image is already processed, skip it.
           if (img.processed?.ocrText && img.assignedClientId !== null) {
             return img;
           }
+
           const file = img.original.file;
           const objectUrl = URL.createObjectURL(file);
           const image = new Image();
@@ -40,6 +49,7 @@ export default function ProcessStep() {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ imageDataUrl: imageDataUrlToSend }),
             });
+
             if (!response.ok) {
               const errorData = await response.json();
               throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -47,6 +57,7 @@ export default function ProcessStep() {
 
             const data = await response.json();
             const ocrText = data.ocrText;
+            
             // Match to client
             let assignedClientId = null;
             const strippedOcrText = ocrText.toLowerCase().replace(/\s/g, "");
@@ -57,6 +68,7 @@ export default function ProcessStep() {
                 break;
               }
             }
+
             return {
               ...img,
               processed: { ocrText },
@@ -68,22 +80,15 @@ export default function ProcessStep() {
           }
         })
       );
+      
       setUploadedImages(updatedImages);
-      setHasProcessed(true);
+      router.push("/review");
     };
 
     processAllImages();
-  }, [uploadedImages, hasProcessed, companies, setUploadedImages]);
+  }, [uploadedImages, companies, router, setUploadedImages]);
 
-  useEffect(() => {
-    const allProcessed = uploadedImages.length > 0 &&
-      hasProcessed &&
-      uploadedImages.some(img => img.processed?.ocrText);
-
-    if (allProcessed) {
-      router.push("/review");
-    }
-  }, [hasProcessed, uploadedImages, router]);
+  const processedCount = uploadedImages.filter(img => img.processed?.ocrText).length;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
@@ -93,7 +98,7 @@ export default function ProcessStep() {
           We&apos;re matching and processing your images. This might take a moment.
         </p>
         <p className="mt-4 text-lg font-bold">
-            Progress: {uploadedImages.filter(img => img.processed?.ocrText).length} / {totalImages}
+          Progress: {processedCount} / {totalImages}
         </p>
       </div>
     </div>

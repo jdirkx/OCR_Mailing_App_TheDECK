@@ -48,7 +48,7 @@ export default function ImageUploadStep() {
       try {
         const compressedFile = await imageCompression(convertedFile, {
           maxSizeMB: 0.1,
-          maxWidthOrHeight: 900,
+          maxWidthOrHeight: 1000,
           useWebWorker: true,
         });
 
