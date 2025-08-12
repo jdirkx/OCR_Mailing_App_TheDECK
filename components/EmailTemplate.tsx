@@ -80,7 +80,7 @@ export async function EmailTemplate({
           paddingBottom: '8px',
           marginBottom: '18px'
         }}>
-          新しい郵便物のお知らせ
+          新しい郵便物が届きました_The DECK株式会社
         </h1>
 
         {/* Main message container */}
@@ -95,7 +95,7 @@ export async function EmailTemplate({
           <p style={{ margin: 0, whiteSpace: 'pre-line' }}>
             いつもお世話になっております。<br />
             The DECK運営事務局です。<br />
-            <strong style={{ color: '#0052cc' }}>新しい郵便物が届きました_The DECK株式会社</strong>
+            <strong style={{ color: '#0052cc' }}>新しい郵便物が届きました。</strong>
           </p>
           <ul style={{ margin: '12px 0 0 0', paddingLeft: '20px', fontSize: '15px' }}>
             <li>受付窓口での受取時間は（平日10：00〜18：00）です。</li>
