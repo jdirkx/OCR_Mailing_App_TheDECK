@@ -309,107 +309,6 @@ export default function ReviewPage() {
 
       <h1 className="text-2xl font-bold mb-4">Review Uploaded Images</h1>
 
-      <div>
-        <div className="flex items-center justify-between my-6">
-          {/* Send All Button */}
-          <button
-            onClick={() => {
-              setShowConfirmAll(true);
-            }}
-            disabled={isBulkSubmitting || hasUnassignedImages || hasOverSizeGroups}
-            className={`px-4 py-2 rounded font-semibold text-white ${
-              isBulkSubmitting
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
-            }`}
-          >
-            {isBulkSubmitting ? "Sending All..." : "📤 Send All"}
-          </button>
-
-          {/* Clear Images Button */}
-          <button
-            onClick={() => {
-              setClearing(true);
-            }}
-            className="px-4 py-2 rounded font-semibold text-white bg-red-500 hover:bg-red-600"
-          >
-            Clear Images
-          </button>
-        </div>
-  
-        {/* Bulk Progress Bar */}
-        {isBulkSubmitting && (
-          <div className="mt-4 w-full bg-gray-200 h-4 rounded">
-            <div
-              className="bg-green-500 h-4 rounded transition-all duration-500 ease-in-out"
-              style={{ width: `${bulkProgress}%` }}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Confirmation Overlay [All] */}
-      {showConfirmAll && (
-      <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-        <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
-          <h2 className="text-xl font-semibold mb-4">Confirm Submission</h2>
-          <p className="mb-6">Are you sure you want to submit all mail?</p>
-          <div className="flex justify-center gap-4">
-            <button
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-              onClick={async () => {
-                setShowConfirmAll(false);
-                await sendAll();
-                }
-              }
-            >
-              Yes, Submit
-            </button>
-            <button
-              className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition"
-              onClick={() => {
-                setShowConfirmAll(false);
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-      )}
-
-      {/* Confirmation for Clear */}
-
-      {clearing && (
-      <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-        <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
-          <h2 className="text-xl font-semibold mb-4">Confirm Clearing</h2>
-          <p className="mb-6">Are you sure you want to clear all images?</p>
-          <div className="flex justify-center gap-4">
-            <button
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-              onClick={async () => {
-                setClearing(false);
-                await clearAll();
-                }
-              }
-            >
-              Yes, Clear All
-            </button>
-            <button
-              className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition"
-              onClick={() => {
-                setClearing(false);
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-      )}
-
-
     {groupedEntries.map(([clientId, images]) => {
       const isSent = clientGroups.find(
         (g) => String(g.clientId) === String(clientId)
@@ -543,6 +442,105 @@ export default function ReviewPage() {
       </div>
       )}
 
+      <div>
+        <div className="flex items-center justify-between my-6">
+          {/* Send All Button */}
+          <button
+            onClick={() => {
+              setShowConfirmAll(true);
+            }}
+            disabled={isBulkSubmitting || hasUnassignedImages || hasOverSizeGroups}
+            className={`px-4 py-2 rounded font-semibold text-white ${
+              isBulkSubmitting
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
+          >
+            {isBulkSubmitting ? "Sending All..." : "📤 Send All"}
+          </button>
+
+          {/* Clear Images Button */}
+          <button
+            onClick={() => {
+              setClearing(true);
+            }}
+            className="px-4 py-2 rounded font-semibold text-white bg-red-500 hover:bg-red-600"
+          >
+            Clear Images
+          </button>
+        </div>
+  
+        {/* Bulk Progress Bar */}
+        {isBulkSubmitting && (
+          <div className="mt-4 w-full bg-gray-200 h-4 rounded">
+            <div
+              className="bg-green-500 h-4 rounded transition-all duration-500 ease-in-out"
+              style={{ width: `${bulkProgress}%` }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Confirmation Overlay [All] */}
+      {showConfirmAll && (
+      <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+          <h2 className="text-xl font-semibold mb-4">Confirm Submission</h2>
+          <p className="mb-6">Are you sure you want to submit all mail?</p>
+          <div className="flex justify-center gap-4">
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+              onClick={async () => {
+                setShowConfirmAll(false);
+                await sendAll();
+                }
+              }
+            >
+              Yes, Submit
+            </button>
+            <button
+              className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition"
+              onClick={() => {
+                setShowConfirmAll(false);
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+      )}
+
+      {/* Confirmation for Clear */}
+
+      {clearing && (
+      <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+          <h2 className="text-xl font-semibold mb-4">Confirm Clearing</h2>
+          <p className="mb-6">Are you sure you want to clear all images?</p>
+          <div className="flex justify-center gap-4">
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+              onClick={async () => {
+                setClearing(false);
+                await clearAll();
+                }
+              }
+            >
+              Yes, Clear All
+            </button>
+            <button
+              className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition"
+              onClick={() => {
+                setClearing(false);
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+      )}
 
       {/* Modal */}
       {modalImageIdx !== null && (
