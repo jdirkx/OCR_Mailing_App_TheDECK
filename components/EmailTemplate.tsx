@@ -99,7 +99,9 @@ export async function EmailTemplate({
           </p>
           <ul style={{ margin: '12px 0 0 0', paddingLeft: '20px', fontSize: '15px' }}>
             <li>受付窓口での受取時間は（平日10：00〜18：00）です。</li>
-            <li>破棄、転送のどちらかをご希望の場合はご連絡ください。</li>
+            <li>
+                破棄、転送のどちらかをご希望の場合は<strong>本メールにご返信ください</strong>。
+            </li>
           </ul>
           <div style={{ marginTop: '12px' }}>
             <strong>【転送】</strong>

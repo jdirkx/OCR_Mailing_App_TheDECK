@@ -21,25 +21,32 @@ export default function ReviewPage() {
   const [showConfirmAll, setShowConfirmAll] = useState(false);
   const [pendingClientId, setPendingClientId] = useState<number | null>(null);
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [bulkProgress, setBulkProgress] = useState(0);
   const [clearing, setClearing] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
   const hasUnassignedImages = uploadedImages.some(img => img.assignedClientId === null);
   const hasOverSizeGroups = clientGroups.some((group) => group.clientId !== "UNASSIGNED" && group.totalSize > 1024 * 1024);
 
-  // Fetch companies on mount
+  // Fetch companies on mount.
+  // We use an empty dependency array to ensure this runs only once.
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
         const companiesData = await getAllClients();
         setCompanies(companiesData);
-      } catch {
-        alert("Failed to load companies.");
+      } catch (err: unknown) {
+        let msg = "Failed to load companies.";
+        if (err instanceof Error) {
+            msg = `Failed to load companies: ${err.message}`;
+        }
+        setErrorMessage(msg);
+        setShowErrorModal(true);
       }
     };
     fetchCompanies();
-  }, [companies.length, setCompanies]);
+  }, [setCompanies]);
 
   // Fetch selected client details
   useEffect(() => {
@@ -71,27 +78,27 @@ export default function ReviewPage() {
 
 
   // Handle updating notes in the context's clientGroups
-    function handleNoteChange(clientId: string | number, newNotes: string) {
-      setClientGroups((prev) =>
-        prev.map((group) =>
-          String(group.clientId) === String(clientId)
-            ? { ...group, notes: newNotes }
-            : group
-        )
+  function handleNoteChange(clientId: string | number, newNotes: string) {
+    setClientGroups((prev) =>
+      prev.map((group) =>
+        String(group.clientId) === String(clientId)
+          ? { ...group, notes: newNotes }
+          : group
+      )
+    );
+  }
+
+  // Remove an image by index
+    function removeImage(idx: number) {
+      setUploadedImages(prev => prev.filter((_, i) => i !== idx));
+      setModalImageIdx(current =>
+        current !== null && current === idx
+          ? null
+          : current !== null && current > idx
+            ? current - 1
+            : current
       );
     }
-
-    // Remove an image by index
-      function removeImage(idx: number) {
-        setUploadedImages(prev => prev.filter((_, i) => i !== idx));
-        setModalImageIdx(current =>
-          current !== null && current === idx
-            ? null
-            : current !== null && current > idx
-              ? current - 1
-              : current
-        );
-      }
 
 
   // Update clientGroups when uploadedImages change, ensuring all clientIds exist
@@ -135,6 +142,7 @@ export default function ReviewPage() {
   async function submitClientGroup(clientId: string | number, silent = false) {
     setIsSubmitting(true);
     setUploadProgress(0);
+    const clientName = companies.find(c => c.id === Number(clientId))?.name || `Client ID ${clientId}`;
     try {
       const group = clientGroups.find(g => String(g.clientId) === String(clientId));
       if (!group) throw new Error("Client group not found");
@@ -186,14 +194,17 @@ export default function ReviewPage() {
         )
       );
     if (!silent) {
-      alert(`✅ Mail for ${freshClient.name} submitted and emailed!`);
+        const message = `✅ Mail for ${clientName} submitted and emailed!`;
+        setErrorMessage(message);
+        setShowErrorModal(true);
     }
     } catch (err: unknown) {
+      let msg = `❌ Failed to submit for client ${clientName}: An unknown error occurred.`;
       if (err instanceof Error) {
-        alert(`❌ Failed to submit for client ${clientId}: ${err.message}`);
-      } else {
-        alert(`❌ Failed to submit for client ${clientId}: An unknown error occurred.`);
+        msg = `❌ Failed to submit for client ${clientName}: ${err.message}`;
       }
+      setErrorMessage(msg);
+      setShowErrorModal(true);
     } finally {
       setIsSubmitting(false);
       setUploadProgress(0);
@@ -212,7 +223,8 @@ export default function ReviewPage() {
     const total = unsentClientGroups.length;
 
     if (total === 0) {
-      alert("✅ All client groups have already been submitted.");
+      setErrorMessage("✅ All client groups have already been submitted.");
+      setShowErrorModal(true);
       return;
     }
 
@@ -223,7 +235,8 @@ export default function ReviewPage() {
 
     for (const group of unsentClientGroups) {
       await submitClientGroup(group.clientId, true).catch(err => {
-        console.error(`Error submitting for ${group.clientId}:`, err);
+        const clientName = companies.find(c => c.id === Number(group.clientId))?.name || `Client ID ${group.clientId}`;
+        console.error(`Error submitting for ${clientName}:`, err);
       });
 
       completed += 1;
@@ -233,7 +246,8 @@ export default function ReviewPage() {
     }
 
     setIsBulkSubmitting(false);
-    alert("✅ All client groups have been submitted!");
+    setErrorMessage("✅ All client groups have been submitted!");
+    setShowErrorModal(true);
   }
 
   // Send email with attachments
@@ -258,6 +272,7 @@ export default function ReviewPage() {
     return await response.json();
   }
 
+  // Clear all images and states
   async function clearAll(){
     setClientGroups([]);
     setUploadedImages([]);
@@ -279,7 +294,7 @@ export default function ReviewPage() {
     if (a === "UNASSIGNED") return -1;
     if (b === "UNASSIGNED") return 1;
     return 0;
-  });    
+  });       
 
   return (
       <div className="p-6 pt-24">
@@ -332,7 +347,7 @@ export default function ReviewPage() {
               : companies.find((c) => c.id === Number(clientId))?.name ??
                 `Client ${clientId} | ${((clientGroups.find(
                 (g) => String(g.clientId) === String(clientId)
-              )?.totalSize ?? 0) / (1024 * 1024)).toFixed(2)} / 1 MB`}
+                )?.totalSize ?? 0) / (1024 * 1024)).toFixed(2)} / 1 MB`}
             {isSent && (
               <span className="px-2 py-1 text-sm bg-green-200 text-green-800 rounded-full">
                 ✅ Sent
@@ -340,8 +355,8 @@ export default function ReviewPage() {
             )}
             {((clientGroups.find(
                 (g) => String(g.clientId) === String(clientId)
-              )?.totalSize ?? 0) > (1024 * 1024)) && (
-              <span className="px-2 py-1 text-sm bg-red-700 text-white-800 rounded-full">
+                )?.totalSize ?? 0) > (1024 * 1024)) && (
+              <span className="px-2 py-1 text-sm bg-red-700 text-white rounded-full">
                 Total size of images exceeds 1MB
               </span>
             )}
@@ -671,6 +686,22 @@ export default function ReviewPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* General Purpose Error/Success Modal */}
+      {showErrorModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+                <h2 className="text-xl font-semibold mb-4">Notification</h2>
+                <p className="mb-6">{errorMessage}</p>
+                <button
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                    onClick={() => setShowErrorModal(false)}
+                >
+                    OK
+                </button>
+            </div>
         </div>
       )}
     </div>
