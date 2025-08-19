@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,33 +10,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model AuditLog {
+  id         String   @id @default(uuid())
+  email      String
+  userName   String
+  action     String
+  meta       Json?
+  createdAt  DateTime @default(now())
+}
+
 model Client {
-  id              Int      @id @default(autoincrement())
-  name            String
-  primaryEmail    String   @unique
+  id             Int       @id @default(autoincrement())
+  name           String
+  people         String[]
+  primaryEmail   String    @unique
   secondaryEmails String[]
-  createdAt       DateTime @default(now())
-  mails           Mail[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
+  mails          Mail[]
 }
 
 model Mail {
-  id          Int       @id @default(autoincrement())
-  receivedAt  DateTime  @default(now())
-  collectedAt DateTime?
-  imageUrls   String[]
-  notes       String?
-  notifiedAt  DateTime?
-  status      String?   @default("notified")
-  urgency     Int?      @default(1)
-  clientId    Int
-  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-}
-
-model AuditLog {
-  id        String   @id @default(uuid())
-  email     String
-  userName  String
-  action    String
-  meta      Json?
-  createdAt DateTime @default(now())
+  id           Int       @id @default(autoincrement())
+  receivedAt   DateTime  @default(now())
+  collectedAt  DateTime?
+  imageUrls    String[]
+  notes        String?
+  notifiedAt   DateTime?
+  status       String?   @default("notified")
+  urgency      Int?      @default(1)
+  clientId     Int
+  client       Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }

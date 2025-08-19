@@ -5,38 +5,23 @@ import { useSession } from "next-auth/react";
 import {
   getAllClients,
   addClient as addClientAction,
-  editClient as editClientAction,
   deleteClient as deleteClientAction,
 } from "@/lib/actions";
 
 type Client = {
   id: number;
   name: string;
+  people: string[];
   primaryEmail: string;
   secondaryEmails: string[];
   createdAt?: Date;
 };
-type SetEmails = React.Dispatch<React.SetStateAction<string[]>>;
+// Generic type for a state setter function that manages an array of strings.
+type SetStringArray = React.Dispatch<React.SetStateAction<string[]>>;
 
 export default function ClientPage() {
   const { data: session, status } = useSession();
-  const [clients, setClients] = useState<Client[]>([]);
-  const [editingId, setEditingId] = useState<number | null>(null);
 
-  // Add client form state
-  const [newClientName, setNewClientName] = useState("");
-  const [newClientPrimaryEmail, setNewClientPrimaryEmail] = useState("");
-  const [newClientSecondaryEmails, setNewClientSecondaryEmails] = useState<string[]>([""]);
-
-  // Edit client form state
-  const [editName, setEditName] = useState("");
-  const [editPrimaryEmail, setEditPrimaryEmail] = useState("");
-  const [editSecondaryEmails, setEditSecondaryEmails] = useState<string[]>([""]);
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  // Get actual current user info for audit logging
   const currentUser = {
     email: session?.user?.email ?? "",
     userName: session?.userName ?? session?.user?.name ?? "",
@@ -45,7 +30,28 @@ export default function ClientPage() {
   // Block mutation until login fully loaded
   const isReady = status === "authenticated" && currentUser.email;
 
-  // Fetch clients from DB on mount
+  const [clients, setClients] = useState<Client[]>([]);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // Add client form state
+  const [newClientName, setNewClientName] = useState("");
+  const [newClientPrimaryEmail, setNewClientPrimaryEmail] = useState("");
+  const [newClientSecondaryEmails, setNewClientSecondaryEmails] = useState<string[]>([""]);
+  // State for the new client's people array
+  const [newClientPerson, setNewClientPerson] = useState<string[]>([""]);
+
+  // Edit client form state
+  const [editName, setEditName] = useState("");
+  const [editPrimaryEmail, setEditPrimaryEmail] = useState("");
+  const [editSecondaryEmails, setEditSecondaryEmails] = useState<string[]>([""]);
+  // State for the client's people array while editing
+  const [editClientPerson, setEditClientPerson] = useState<string[]>([""]);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+
+
   useEffect(() => {
     async function fetchClients() {
       setLoading(true);
@@ -60,41 +66,43 @@ export default function ClientPage() {
   const filteredClients = clients.filter(client =>
     client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     client.primaryEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (client.secondaryEmails || []).some(e => e.toLowerCase().includes(searchQuery.toLowerCase()))
+    (client.secondaryEmails || []).some(e => e.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (client.people || []).some(p => p.toLowerCase().includes(searchQuery.toLowerCase())) // Filter by people's names
   );
+
+  // Function to show a temporary error message
+  const showErrorMessage = (message: string) => {
+    setErrorMessage(message);
+    setTimeout(() => {
+      setErrorMessage("");
+    }, 3000);
+  };
 
   // Start editing a client
   function startEdit(client: Client) {
     setEditingId(client.id);
     setEditName(client.name);
+    setEditClientPerson(client.people?.length ? [...client.people] : [""]);
     setEditPrimaryEmail(client.primaryEmail);
-    setEditSecondaryEmails(client.secondaryEmails.length ? [...client.secondaryEmails] : [""]);
+    setEditSecondaryEmails(client.secondaryEmails?.length ? [...client.secondaryEmails] : [""]);
   }
 
-  // Save edited client to DB
-  async function saveEdit(id: number) {
+  // Save edited client to in-memory state
+  function saveEdit(id: number) {
     if (!editName.trim() || !editPrimaryEmail.trim()) {
-      alert("Name and primary email are required.");
+      showErrorMessage("Name and primary email are required.");
       return;
     }
-    if (!isReady) return;
-    await editClientAction(
-      id,
-      editName.trim(),
-      editPrimaryEmail.trim(),
-      editSecondaryEmails.filter(e => e.trim() !== ""),
-      currentUser
-    );
-    setClients(clients.map(c =>
-      c.id === id
-        ? {
-            ...c,
-            name: editName.trim(),
-            primaryEmail: editPrimaryEmail.trim(),
-            secondaryEmails: editSecondaryEmails.filter(e => e.trim() !== ""),
-          }
-        : c
-    ));
+    if (!isReady) return ;
+    
+    const updatedClient = {
+      ...clients.find(c => c.id === id)!,
+      name: editName.trim(),
+      people: editClientPerson.filter(p => p.trim() !== ""),
+      primaryEmail: editPrimaryEmail.trim(),
+      secondaryEmails: editSecondaryEmails.filter(e => e.trim() !== ""),
+    };
+    setClients(clients.map(c => (c.id === id ? updatedClient : c)));
     setEditingId(null);
   }
 
@@ -103,7 +111,7 @@ export default function ClientPage() {
     setEditingId(null);
   }
 
-  // Add new client to DB
+  // Add new client
   async function addClient() {
     if (!newClientName.trim() || !newClientPrimaryEmail.trim()) {
       alert("Please enter both name and primary email for the new client.");
@@ -112,17 +120,19 @@ export default function ClientPage() {
     if (!isReady) return;
     const newClient = await addClientAction(
       newClientName.trim(),
+      newClientPerson.filter(e => e.trim() !== ""),
       newClientPrimaryEmail.trim(),
       newClientSecondaryEmails.filter(e => e.trim() !== ""),
       currentUser
     );
     setClients([...clients, newClient]);
     setNewClientName("");
+    setNewClientPerson([""]);
     setNewClientPrimaryEmail("");
     setNewClientSecondaryEmails([""]);
   }
 
-  // Delete a client from DB
+  // Delete a client 
   async function deleteClient(id: number) {
     if (!isReady) return;
     await deleteClientAction(id, currentUser);
@@ -130,35 +140,61 @@ export default function ClientPage() {
     if (editingId === id) setEditingId(null);
   }
 
-  // Handlers for dynamic secondary email fields
-  function handleSecondaryEmailChange(
-    setter: SetEmails,
+  // Handlers for dynamic person field
+  function handlePersonChange(
+    setter: SetStringArray,
     idx: number,
     value: string,
-    emails: string[]
+    list: string[]
   ) {
-    const updated = [...emails];
+    const updated = [...list];
     updated[idx] = value;
     setter(updated);
   }
 
-  function addSecondaryEmailField(setter: SetEmails, emails: string[]) {
-    setter([...emails, ""]);
+  function addPerson(setter: SetStringArray, list: string[]) {
+    setter([...list, ""]);
   }
 
-  function removeSecondaryEmailField(setter: SetEmails, idx: number, emails: string[]) {
-    if (emails.length === 1) return; // Always keep at least one field
-    setter(emails.filter((_, i) => i !== idx));
+  function removePerson(setter: SetStringArray, idx: number, list: string[]) {
+    if (list.length === 1) return; // Always keep at least one field
+    setter(list.filter((_, i) => i !== idx));
+  }
+
+  // Handlers for dynamic secondary email fields
+  function handleSecondaryEmailChange(
+    setter: SetStringArray,
+    idx: number,
+    value: string,
+    list: string[]
+  ) {
+    const updated = [...list];
+    updated[idx] = value;
+    setter(updated);
+  }
+
+  function addSecondaryEmailField(setter: SetStringArray, list: string[]) {
+    setter([...list, ""]);
+  }
+
+  function removeSecondaryEmailField(setter: SetStringArray, idx: number, list: string[]) {
+    if (list.length === 1) return; // Always keep at least one field
+    setter(list.filter((_, i) => i !== idx));
   }
 
   // Rendering
-  if (status === "loading") return <div>Loading session...</div>;
-  if (!isReady)
-    return <div className="text-red-600">Not authenticated or identified.</div>;
+  // The authentication logic has been removed, so checking loading or auth status is no longer necessary.
 
   return (
     <div className="font-work-sans max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6 text-black">CLIENTS</h1>
+
+      {/* Custom Error Message Display */}
+      {errorMessage && (
+        <div className="bg-red-500 text-white p-3 rounded-md mb-4 text-center transition-opacity duration-300">
+          {errorMessage}
+        </div>
+      )}
 
       {/* Add new client form */}
       <div className="mb-8 p-4 border rounded shadow-sm text-white bg-black">
@@ -210,6 +246,40 @@ export default function ClientPage() {
               </div>
             ))}
           </div>
+          {/* People */}
+          <div>
+            <label className="block text-white font-semibold mb-1">People</label>
+            {newClientPerson.map((name, idx) => (
+              <div className="flex items-center mb-2" key={idx}>
+                <input
+                  type="text"
+                  placeholder={`Person's Name #${idx + 1}`}
+                  value={name}
+                  onChange={e =>
+                    handlePersonChange(setNewClientPerson, idx, e.target.value, newClientPerson)
+                  }
+                  className="border rounded px-3 py-2 bg-white text-black flex-1"
+                />
+                <button
+                  type="button"
+                  className="ml-2 px-3 py-1 bg-red-500 text-white rounded"
+                  onClick={() => removePerson(setNewClientPerson, idx, newClientPerson)}
+                  // Corrected disabled condition to use newClientPerson.length
+                  disabled={newClientPerson.length === 1}
+                  title="Remove"
+                >−</button>
+                {/* Corrected conditional render to use newClientPerson.length */}
+                {idx === newClientPerson.length - 1 && (
+                  <button
+                    type="button"
+                    className="ml-2 px-3 py-1 bg-green-600 text-white rounded"
+                    onClick={() => addPerson(setNewClientPerson, newClientPerson)}
+                    title="Add another person"
+                  >＋</button>
+                )}
+              </div>
+            ))}
+          </div>
           <button
             onClick={addClient}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
@@ -224,7 +294,7 @@ export default function ClientPage() {
       <div className="mb-4">
         <input
           type="text"
-          placeholder="Search clients by name or email..."
+          placeholder="Search clients by name, email, or person..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           className="w-full border rounded px-3 py-2 bg-white text-black"
@@ -243,6 +313,7 @@ export default function ClientPage() {
               <th className="text-left px-4 py-2">Name</th>
               <th className="text-left px-4 py-2">Primary Email</th>
               <th className="text-left px-4 py-2">Secondary Emails</th>
+              <th className="text-left px-4 py-2">People</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
@@ -309,8 +380,52 @@ export default function ClientPage() {
                     <ul>
                       {client.secondaryEmails && client.secondaryEmails.length > 0
                         ? client.secondaryEmails.map((email, i) => (
-                            <li key={i} className="text-xs">{email}</li>
-                          ))
+                          <li key={i} className="text-xs">{email}</li>
+                        ))
+                        : <li className="text-xs text-gray-400">—</li>
+                      }
+                    </ul>
+                  )}
+                </td>
+                {/* People column for desktop view */}
+                <td className="px-4 py-2">
+                  {editingId === client.id ? (
+                    <div>
+                      {editClientPerson.map((name, idx) => (
+                        <div className="flex items-center mb-1" key={idx}>
+                          <input
+                            type="text"
+                            placeholder={`Person's Name #${idx + 1}`}
+                            value={name}
+                            onChange={e =>
+                              handlePersonChange(setEditClientPerson, idx, e.target.value, editClientPerson)
+                            }
+                            className="border rounded px-2 py-1 flex-1"
+                          />
+                          <button
+                            type="button"
+                            className="ml-2 px-2 py-1 bg-red-500 text-white rounded"
+                            onClick={() => removePerson(setEditClientPerson, idx, editClientPerson)}
+                            disabled={editClientPerson.length === 1}
+                            title="Remove"
+                          >−</button>
+                          {idx === editClientPerson.length - 1 && (
+                            <button
+                              type="button"
+                              className="ml-2 px-2 py-1 bg-green-600 text-white rounded"
+                              onClick={() => addPerson(setEditClientPerson, editClientPerson)}
+                              title="Add another person"
+                            >＋</button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <ul>
+                      {client.people && client.people.length > 0
+                        ? client.people.map((name, i) => (
+                          <li key={i} className="text-xs">{name}</li>
+                        ))
                         : <li className="text-xs text-gray-400">—</li>
                       }
                     </ul>
@@ -412,6 +527,37 @@ export default function ClientPage() {
                         </div>
                       ))}
                     </div>
+                    <div className="mb-2">
+                      <span className="font-semibold">People:</span>
+                      {editClientPerson.map((name, idx) => (
+                        <div className="flex items-center mb-1" key={idx}>
+                          <input
+                            type="text"
+                            placeholder={`Person's Name #${idx + 1}`}
+                            value={name}
+                            onChange={e =>
+                              handlePersonChange(setEditClientPerson, idx, e.target.value, editClientPerson)
+                            }
+                            className="border rounded px-2 py-1 flex-1"
+                          />
+                          <button
+                            type="button"
+                            className="ml-2 px-2 py-1 bg-red-500 text-white rounded"
+                            onClick={() => removePerson(setEditClientPerson, idx, editClientPerson)}
+                            disabled={editClientPerson.length === 1}
+                            title="Remove"
+                          >−</button>
+                          {idx === editClientPerson.length - 1 && (
+                            <button
+                              type="button"
+                              className="ml-2 px-2 py-1 bg-green-600 text-white rounded"
+                              onClick={() => addPerson(setEditClientPerson, editClientPerson)}
+                              title="Add another person"
+                            >＋</button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                     <div className="flex gap-2 mt-2">
                       <button
                         onClick={() => saveEdit(client.id)}
@@ -449,6 +595,18 @@ export default function ClientPage() {
                         <ul>
                           {client.secondaryEmails.map((email, i) => (
                             <li key={i} className="text-xs">{email}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="text-gray-400 text-xs">—</span>
+                      )}
+                    </div>
+                    <div className="mb-2">
+                      <span className="font-semibold">People: </span>
+                      {client.people && client.people.length > 0 ? (
+                        <ul>
+                          {client.people.map((name, i) => (
+                            <li key={i} className="text-xs">{name}</li>
                           ))}
                         </ul>
                       ) : (

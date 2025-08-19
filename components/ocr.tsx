@@ -4,6 +4,12 @@ import { useMail } from "./context";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+function normalize(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/\s+/g, "");
+}
+
 export default function ProcessStep() {
   const router = useRouter();
   const { uploadedImages, setUploadedImages, companies } = useMail();
@@ -56,17 +62,41 @@ export default function ProcessStep() {
             }
 
             const data = await response.json();
-            const ocrText = data.ocrText;
+            const ocrText = data.ocrText
+            const strippedOcrText = normalize(ocrText);
+            console.log("🔍 OCR Text (raw):", ocrText);
+            console.log("🔍 OCR Text (normalized):", strippedOcrText);
             
             // Match to client
-            let assignedClientId = null;
-            const strippedOcrText = ocrText.toLowerCase().replace(/\s/g, "");
+            let assignedClientId: number | null = null;
             for (const company of companies) {
-              const strippedName = company.name.toLowerCase().replace(/\s/g, "");
-              if (strippedOcrText.includes(strippedName)) {
+              const normCompany = normalize(company.name);
+              console.log(`\n➡️ Checking company: "${company.name}" => "${normCompany}"`);
+
+              // Company name match
+              if (strippedOcrText.includes(normCompany)) {
+                console.log(`✅ Matched company "${company.name}"`);
                 assignedClientId = company.id;
                 break;
               }
+
+              // People match
+              if (company.people?.length) {
+                for (const person of company.people) {
+                  const normPerson = normalize(person);
+                  console.log(`   👤 Checking person: "${person}" => "${normPerson}"`);
+                  if (strippedOcrText.includes(normPerson)) {
+                    console.log(`   ✅ Matched person "${person}" in company "${company.name}"`);
+                    assignedClientId = company.id;
+                    break;
+                  }
+                }
+                if (assignedClientId !== null) break;
+              }
+            }
+
+            if (!assignedClientId) {
+              console.log("❌ No match found for OCR text:", ocrText);
             }
 
             return {

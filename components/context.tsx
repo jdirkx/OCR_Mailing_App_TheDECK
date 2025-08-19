@@ -27,6 +27,7 @@ export type ClientGroup = {
 export type Client = {
   id: number;
   name: string;
+  people: string[]
   primaryEmail: string;
   secondaryEmails: string[];
 };

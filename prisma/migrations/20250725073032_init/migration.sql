@@ -2,6 +2,7 @@
 CREATE TABLE "Client" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
+    "people" TEXT[],
     "primaryEmail" TEXT NOT NULL,
     "secondaryEmails" TEXT[],
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

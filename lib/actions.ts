@@ -99,12 +99,13 @@ export async function getAllClients() {
 // Add a client with primary and secondary emails
 export async function addClient(
   name: string,
+  people: string[] = [],
   primaryEmail: string,
   secondaryEmails: string[] = [],
   auditUser?: { email: string | null | undefined; userName: string | null | undefined }
 ) {
   const client = await prisma.client.create({
-    data: { name, primaryEmail, secondaryEmails },
+    data: { name, people, primaryEmail, secondaryEmails },
   });
 
   // Audit log for adding client
@@ -113,7 +114,7 @@ export async function addClient(
       email: auditUser.email,
       userName: auditUser.userName,
       action: "ADD_CLIENT",
-      meta: { clientId: client.id, name, primaryEmail, secondaryEmails }
+      meta: { clientId: client.id, name, people, primaryEmail, secondaryEmails }
     });
   }
 
@@ -124,13 +125,14 @@ export async function addClient(
 export async function editClient(
   id: number,
   name: string,
+  people: string[] = [],
   primaryEmail: string,
   secondaryEmails: string[] = [],
   auditUser?: { email: string | null | undefined; userName: string | null | undefined }
 ) {
   const client = await prisma.client.update({
     where: { id },
-    data: { name, primaryEmail, secondaryEmails },
+    data: { name, people, primaryEmail, secondaryEmails },
   });
 
   // Audit log for editing client
@@ -139,7 +141,7 @@ export async function editClient(
       email: auditUser.email,
       userName: auditUser.userName,
       action: "EDIT_CLIENT",
-      meta: { clientId: id, newName: name, newPrimaryEmail: primaryEmail, newSecondaryEmails: secondaryEmails }
+      meta: { clientId: id, newName: name, newPeople: people, newPrimaryEmail: primaryEmail, newSecondaryEmails: secondaryEmails }
     });
   }
 
@@ -160,7 +162,7 @@ export async function deleteClient(
       email: auditUser.email,
       userName: auditUser.userName,
       action: "DELETE_CLIENT",
-      meta: { clientId: id, deletedName: client.name, deletedPrimaryEmail: client.primaryEmail }
+      meta: { clientId: id, deletedName: client.name, deletedPeople: client.people, deletedPrimaryEmail: client.primaryEmail }
     });
   }
 
